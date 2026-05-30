@@ -7,6 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>CampoTrack Pro</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -87,7 +88,10 @@ body{font-family:"Figtree",sans-serif;background:var(--g8);color:var(--text);-we
 .empty-s{font-size:14px;color:var(--text-muted);margin-top:4px;}
 
 #map-wrap{position:relative;flex-shrink:0;}
-#map-canvas{width:100%;height:280px;display:block;}
+#leaflet-map{width:100%;height:300px;display:block;z-index:1;}
+.leaflet-control-attribution{font-size:9px !important;}
+.leaflet-control-zoom{margin:8px !important;}
+.leaflet-control-zoom a{width:28px !important;height:28px !important;line-height:28px !important;font-size:16px !important;}
 .map-pill{position:absolute;bottom:12px;left:12px;right:12px;background:rgba(10,10,10,0.88);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);color:var(--white);border-radius:12px;padding:9px 14px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:9px;}
 .gps-pill{position:absolute;top:12px;right:12px;background:rgba(10,10,10,0.78);backdrop-filter:blur(8px);color:var(--white);border-radius:8px;padding:5px 11px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:6px;}
 .sdot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
@@ -249,7 +253,7 @@ body{font-family:"Figtree",sans-serif;background:var(--g8);color:var(--text);-we
     <span style="font-size:11px;font-weight:700;background:rgba(0,201,107,0.15);color:var(--accent);padding:3px 10px;border-radius:20px;white-space:nowrap;" id="vis-badge">0 pts</span>
   </div>
   <div id="map-wrap">
-    <canvas id="map-canvas"></canvas>
+    <div id="leaflet-map"></div>
     <div class="gps-pill"><span class="sdot idle" id="sdot"></span><span id="gps-txt">GPS</span></div>
     <div class="map-pill"><div class="sdot idle" id="sdot2"></div><span id="stext">Pronto para iniciar</span></div>
   </div>
@@ -374,15 +378,79 @@ body{font-family:"Figtree",sans-serif;background:var(--g8);color:var(--text);-we
   </div>
 </div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 let areas=JSON.parse(localStorage.getItem("ct_areas")||"[]");
 let stats=JSON.parse(localStorage.getItem("ct_stats")||'{"vis":0,"km":0}');
 let currentArea=null,tracking=false,paused=false,startTime=null,pausedMs=0;
 let timerInt=null,simInt=null,watchId=null,useGPS=false,lastGPSPos=null;
-// path armazena {lat,lng} reais (GPS) ou {x,y} relativo (simulação)
-// gpsPath armazena sempre {lat,lng} reais para exportação KML correta
-let path=[],gpsPath=[],pontos=[],fotos=[],simPos={x:.45,y:.45},simAngle=Math.random()*Math.PI*2,totalDist=0;
-let mapBounds=null; // {minLat,maxLat,minLng,maxLng} para projetar GPS no canvas
+let gpsPath=[],pontos=[],fotos=[],simPos={x:.45,y:.45},simAngle=Math.random()*Math.PI*2,totalDist=0;
+let mapBounds=null;
+
+// ── LEAFLET MAP ──────────────────────────────────────
+let lmap=null, lPolyline=null, lMarkers=[], lPosMarker=null, lCircle=null;
+const DEFAULT_CENTER=[-28.51,-50.87]; // Vacaria RS
+
+function initMap(){
+  if(lmap) return;
+  lmap = L.map('leaflet-map', {
+    center: DEFAULT_CENTER, zoom: 16,
+    zoomControl: true, attributionControl: true
+  });
+
+  // Satélite Esri (gratuito, sem API key)
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles © Esri &mdash; Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP',
+    maxZoom: 20
+  }).addTo(lmap);
+
+  // Labels por cima do satélite
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 20, opacity: 0.7
+  }).addTo(lmap);
+
+  lPolyline = L.polyline([], {color:'#00C96B', weight:4, opacity:0.9}).addTo(lmap);
+}
+
+function mapAddPoint(lat, lng){
+  lPolyline.addLatLng([lat,lng]);
+  // atualiza marcador de posição atual
+  if(!lPosMarker){
+    const posIcon = L.divIcon({className:'', html:`
+      <div style="width:18px;height:18px;border-radius:50%;background:#00C96B;border:3px solid #fff;box-shadow:0 0 0 4px rgba(0,201,107,0.3);"></div>
+    `, iconSize:[18,18], iconAnchor:[9,9]});
+    lPosMarker = L.marker([lat,lng], {icon:posIcon, zIndexOffset:1000}).addTo(lmap);
+  } else {
+    lPosMarker.setLatLng([lat,lng]);
+  }
+  // centraliza suavemente
+  lmap.panTo([lat,lng], {animate:true, duration:0.5});
+}
+
+function mapAddPontoMarker(ponto, idx){
+  const color = ptColor(ponto.tipo);
+  const icon = L.divIcon({
+    className:'',
+    html:`<div style="width:30px;height:30px;border-radius:50%;background:${color};border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;font-family:Figtree,sans-serif;">${idx+1}</div>`,
+    iconSize:[30,30], iconAnchor:[15,15]
+  });
+  const lat = ponto.gps ? ponto.gps.lat : DEFAULT_CENTER[0];
+  const lng = ponto.gps ? ponto.gps.lng : DEFAULT_CENTER[1];
+  const m = L.marker([lat,lng], {icon}).addTo(lmap);
+  m.bindPopup(`<b>${TI[ponto.tipo]||''} ${ponto.titulo}</b>${ponto.obs?'<br>'+ponto.obs:''}<br><small>${TL[ponto.tipo]} · ${ponto.time} · ${ponto.dist}km</small>`);
+  lMarkers.push(m);
+}
+
+function mapClear(){
+  if(!lmap) return;
+  if(lPolyline) lPolyline.setLatLngs([]);
+  lMarkers.forEach(m=>lmap.removeLayer(m)); lMarkers=[];
+  if(lPosMarker){lmap.removeLayer(lPosMarker);lPosMarker=null;}
+  lmap.setView(DEFAULT_CENTER, 16);
+}
+
+function resizeCanvas(){ if(lmap) setTimeout(()=>lmap.invalidateSize(),100); }
+function drawMap(){ /* substituído pelo Leaflet */ }
 function showScreen(id){document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));document.getElementById(id).classList.add("active");if(id==="scr-areas")renderAreas();if(id==="scr-vistoria")setTimeout(resizeCanvas,60);if(id==="scr-report"){buildReport();document.getElementById("rep-date").textContent=new Date().toLocaleDateString("pt-BR");}}
 function toggleChip(el){el.classList.toggle("sel");}
 function getChips(){return[...document.querySelectorAll("#obj-chips .chip.sel")].map(c=>c.textContent);}
@@ -393,96 +461,25 @@ function g(id){const e=document.getElementById(id);return e?e.value.trim():"";}
 function salvarArea(){const nome=g("f-nome");if(!nome){alert("Informe o nome da área.");return;}const a={nome,fazenda:g("f-fazenda"),municipio:g("f-municipio"),safra:g("f-safra"),cultura:g("f-cultura"),cultivar:g("f-cultivar"),ha:g("f-ha"),estadio:g("f-estadio"),pop:g("f-pop"),semeadura:g("f-semeadura"),objetivos:getChips(),obs:g("f-obs"),data:new Date().toLocaleDateString("pt-BR"),id:Date.now()};areas.push(a);localStorage.setItem("ct_areas",JSON.stringify(areas));["f-nome","f-fazenda","f-municipio","f-cultivar","f-ha","f-pop","f-semeadura","f-obs"].forEach(id=>document.getElementById(id).value="");document.getElementById("f-cultura").value="";document.getElementById("f-estadio").value="";document.querySelectorAll("#obj-chips .chip.sel").forEach(c=>c.classList.remove("sel"));currentArea=a;resetVistoria();showScreen("scr-vistoria");}
 function abrirVistoria(i){currentArea=areas[i];resetVistoria();showScreen("scr-vistoria");}
 function limparAreas(){if(!confirm("Apagar todas as áreas?"))return;areas=[];localStorage.setItem("ct_areas",JSON.stringify(areas));renderAreas();}
-function resetVistoria(){tracking=false;paused=false;clearInterval(timerInt);clearInterval(simInt);if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;}path=[];gpsPath=[];pontos=[];fotos=[];totalDist=0;startTime=null;pausedMs=0;lastGPSPos=null;mapBounds=null;simPos={x:.25+Math.random()*.5,y:.25+Math.random()*.5};simAngle=Math.random()*Math.PI*2;document.getElementById("sv-dist").textContent="0.00";document.getElementById("sv-time").textContent="00:00";["sdot","sdot2"].forEach(id=>document.getElementById(id).className="sdot idle");document.getElementById("stext").textContent="Pronto para iniciar";document.getElementById("track-icon").className="ti ti-player-play";document.getElementById("track-lbl").textContent="Iniciar";document.getElementById("btn-track").className="btn btn-accent";document.getElementById("btn-ponto").disabled=true;document.getElementById("vis-title").textContent=currentArea?currentArea.nome:"Vistoria";document.getElementById("vis-badge").textContent="0 pts";document.getElementById("gps-txt").textContent="GPS";renderPontos();setTimeout(()=>{resizeCanvas();drawMap();},80);}
-const canvas=document.getElementById("map-canvas"),ctx=canvas.getContext("2d");
-function resizeCanvas(){const w=document.getElementById("map-wrap");canvas.width=w.clientWidth;canvas.height=280;drawMap();}
-
-// Projeta lat/lng para x,y no canvas com base nos bounds acumulados
-function latlngToXY(lat,lng,W,H){
-  if(!mapBounds)return{x:W*.5,y:H*.5};
-  const pad=0.05;
-  const dLat=mapBounds.maxLat-mapBounds.minLat||0.001;
-  const dLng=mapBounds.maxLng-mapBounds.minLng||0.001;
-  // margem de 10% nas bordas
-  const x=(lng-mapBounds.minLng)/dLng*(W*(1-pad*2))+W*pad;
-  const y=(mapBounds.maxLat-lat)/dLat*(H*(1-pad*2))+H*pad;
-  return{x,y};
-}
-
-function drawMap(){
-  const W=canvas.width,H=canvas.height;
-  ctx.clearRect(0,0,W,H);
-  ctx.fillStyle="#1a2e1a";ctx.fillRect(0,0,W,H);
-  ctx.strokeStyle="rgba(255,255,255,0.025)";ctx.lineWidth=1;
-  for(let y=0;y<H;y+=16){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
-
-  // talhão de fundo (elipse decorativa)
-  const cx=W*.5,cy=H*.48,rx=W*.43,ry=H*.41;
-  ctx.beginPath();ctx.ellipse(cx,cy,rx,ry,-.15,0,Math.PI*2);
-  ctx.fillStyle="rgba(0,201,107,0.07)";ctx.fill();
-  ctx.strokeStyle="rgba(0,201,107,0.45)";ctx.lineWidth=1.5;ctx.setLineDash([8,5]);ctx.stroke();ctx.setLineDash([]);
-
-  // rota
-  const pts = useGPS && gpsPath.length>1
-    ? gpsPath.map(p=>latlngToXY(p.lat,p.lng,W,H))
-    : path.map(p=>({x:p.x*W,y:p.y*H}));
-
-  if(pts.length>1){
-    ctx.beginPath();ctx.strokeStyle="rgba(0,201,107,0.2)";ctx.lineWidth=10;ctx.lineJoin="round";ctx.lineCap="round";
-    pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));ctx.stroke();
-    ctx.beginPath();ctx.strokeStyle="#00C96B";ctx.lineWidth=2.5;
-    pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));ctx.stroke();
-  }
-
-  // pontos
-  pontos.forEach((p,i)=>{
-    let px_,py_;
-    if(useGPS && p.gps){const r=latlngToXY(p.gps.lat,p.gps.lng,W,H);px_=r.x;py_=r.y;}
-    else{px_=p.pos.x*W;py_=p.pos.y*H;}
-    ctx.beginPath();ctx.arc(px_,py_,13,0,Math.PI*2);ctx.fillStyle=ptColor(p.tipo);ctx.fill();
-    ctx.strokeStyle="#fff";ctx.lineWidth=2;ctx.stroke();
-    ctx.fillStyle="#fff";ctx.font="bold 11px Figtree,sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(i+1,px_,py_);
-  });
-
-  // posição atual
-  const last = useGPS && gpsPath.length>0
-    ? latlngToXY(gpsPath[gpsPath.length-1].lat,gpsPath[gpsPath.length-1].lng,W,H)
-    : (path.length>0?{x:path[path.length-1].x*W,y:path[path.length-1].y*H}:null);
-  if(last){
-    ctx.beginPath();ctx.arc(last.x,last.y,18,0,Math.PI*2);ctx.strokeStyle="rgba(0,201,107,0.25)";ctx.lineWidth=6;ctx.stroke();
-    ctx.beginPath();ctx.arc(last.x,last.y,8,0,Math.PI*2);ctx.fillStyle="#fff";ctx.fill();
-    ctx.beginPath();ctx.arc(last.x,last.y,5.5,0,Math.PI*2);ctx.fillStyle="#00C96B";ctx.fill();
-  }
-}
+function resetVistoria(){tracking=false;paused=false;clearInterval(timerInt);clearInterval(simInt);if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;}gpsPath=[];pontos=[];fotos=[];totalDist=0;startTime=null;pausedMs=0;lastGPSPos=null;mapBounds=null;useGPS=false;document.getElementById("sv-dist").textContent="0.00";document.getElementById("sv-time").textContent="00:00";["sdot","sdot2"].forEach(id=>document.getElementById(id).className="sdot idle");document.getElementById("stext").textContent="Pronto para iniciar";document.getElementById("track-icon").className="ti ti-player-play";document.getElementById("track-lbl").textContent="Iniciar";document.getElementById("btn-track").className="btn btn-accent";document.getElementById("btn-ponto").disabled=true;document.getElementById("vis-title").textContent=currentArea?currentArea.nome:"Vistoria";document.getElementById("vis-badge").textContent="0 pts";document.getElementById("gps-txt").textContent="GPS";renderPontos();setTimeout(()=>{initMap();mapClear();lmap.invalidateSize();},120);}
 function ptColor(t){return{observacao:"#0A84FF",cultivar:"#00C96B",praga:"#FF6B35",doenca:"#FF9F0A",invasora:"#30D158",solo:"#8E8E93",agua:"#5AC8FA",stand:"#64D2FF",producao:"#BF5AF2",adubacao:"#FFD60A",outro:"#636366"}[t]||"#636366";}
 function pad(n){return n.toString().padStart(2,"0");}
 function toggleTracking(){!tracking?startTracking():pauseTracking();}
-function startTracking(){tracking=true;paused=false;startTime=Date.now()-pausedMs;document.getElementById("btn-track").className="btn btn-red";document.getElementById("track-icon").className="ti ti-player-pause";document.getElementById("track-lbl").textContent="Pausar";["sdot","sdot2"].forEach(id=>document.getElementById(id).className="sdot rec");document.getElementById("stext").textContent="Rastreando...";document.getElementById("btn-ponto").disabled=false;if(!useGPS && path.length===0)path.push({...simPos});timerInt=setInterval(()=>{const el=Date.now()-startTime;document.getElementById("sv-time").textContent=pad(Math.floor(el/60000))+":"+pad(Math.floor((el%60000)/1000));},1000);
+function startTracking(){tracking=true;paused=false;startTime=Date.now()-pausedMs;document.getElementById("btn-track").className="btn btn-red";document.getElementById("track-icon").className="ti ti-player-pause";document.getElementById("track-lbl").textContent="Pausar";["sdot","sdot2"].forEach(id=>document.getElementById(id).className="sdot rec");document.getElementById("stext").textContent="Rastreando...";document.getElementById("btn-ponto").disabled=false;timerInt=setInterval(()=>{const el=Date.now()-startTime;document.getElementById("sv-time").textContent=pad(Math.floor(el/60000))+":"+pad(Math.floor((el%60000)/1000));},1000);
 if(navigator.geolocation){
   watchId=navigator.geolocation.watchPosition(pos=>{
     useGPS=true;
     const lat=pos.coords.latitude,lng=pos.coords.longitude;
-    // atualiza bounds para projeção no canvas
-    if(!mapBounds){mapBounds={minLat:lat,maxLat:lat,minLng:lng,maxLng:lng};}
-    else{mapBounds.minLat=Math.min(mapBounds.minLat,lat);mapBounds.maxLat=Math.max(mapBounds.maxLat,lat);mapBounds.minLng=Math.min(mapBounds.minLng,lng);mapBounds.maxLng=Math.max(mapBounds.maxLng,lng);}
-    // expande bounds 20% para não colar na borda
-    const dLat=(mapBounds.maxLat-mapBounds.minLat)*0.1||0.0005;
-    const dLng=(mapBounds.maxLng-mapBounds.minLng)*0.1||0.0005;
-    const viewBounds={minLat:mapBounds.minLat-dLat,maxLat:mapBounds.maxLat+dLat,minLng:mapBounds.minLng-dLng,maxLng:mapBounds.maxLng+dLng};
-    // guarda rota GPS real
     gpsPath.push({lat,lng});if(gpsPath.length>2000)gpsPath.shift();
-    // calcula distância
     if(lastGPSPos){totalDist+=geoD(lastGPSPos.lat,lastGPSPos.lng,lat,lng)/1000;document.getElementById("sv-dist").textContent=totalDist.toFixed(2);}
     lastGPSPos={lat,lng};
-    // simPos apenas para posição relativa no canvas simulado (não usado no GPS)
-    simPos={x:.5,y:.5};
     document.getElementById("gps-txt").textContent="±"+Math.round(pos.coords.accuracy||0)+"m";
-    drawMap();
+    mapAddPoint(lat,lng);
   },()=>{useGPS=false;startSim();},{enableHighAccuracy:true,maximumAge:2000,timeout:8000});
   setTimeout(()=>{if(!useGPS)startSim();},8000);
 }else startSim();
 }
-function startSim(){document.getElementById("gps-txt").textContent="Demo";simInt=setInterval(()=>{simAngle+=(Math.random()-.5)*.55;const sp=.007+Math.random()*.005;let nx=Math.max(.07,Math.min(.93,simPos.x+Math.cos(simAngle)*sp)),ny=Math.max(.07,Math.min(.93,simPos.y+Math.sin(simAngle)*sp));totalDist+=Math.sqrt(Math.pow((nx-simPos.x)*.1,2)+Math.pow((ny-simPos.y)*.09,2))*800;document.getElementById("sv-dist").textContent=totalDist.toFixed(2);simPos={x:nx,y:ny};path.push({...simPos});if(path.length>1000)path.shift();drawMap();},500);}
+function startSim(){document.getElementById("gps-txt").textContent="Demo";simInt=setInterval(()=>{simAngle+=(Math.random()-.5)*.55;const sp=.007+Math.random()*.005;let nx=Math.max(.07,Math.min(.93,simPos.x+Math.cos(simAngle)*sp)),ny=Math.max(.07,Math.min(.93,simPos.y+Math.sin(simAngle)*sp));totalDist+=Math.sqrt(Math.pow((nx-simPos.x)*.1,2)+Math.pow((ny-simPos.y)*.09,2))*800;document.getElementById("sv-dist").textContent=totalDist.toFixed(2);simPos={x:nx,y:ny};},500);}
 function pauseTracking(){tracking=false;paused=true;pausedMs=Date.now()-startTime;clearInterval(timerInt);clearInterval(simInt);if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;}document.getElementById("btn-track").className="btn btn-accent";document.getElementById("track-icon").className="ti ti-player-play";document.getElementById("track-lbl").textContent="Retomar";["sdot","sdot2"].forEach(id=>document.getElementById(id).className="sdot paused");document.getElementById("stext").textContent=`Pausado · ${pontos.length} ponto(s) · ${totalDist.toFixed(2)} km`;}
 function geoD(a,b,c,d){const R=6371000,p1=a*Math.PI/180,p2=c*Math.PI/180,dp=(c-a)*Math.PI/180,dl=(d-b)*Math.PI/180,x=Math.sin(dp/2)**2+Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)**2;return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
 function showModalPonto(){fotos=[];document.getElementById("m-titulo").value="";document.getElementById("m-obs").value="";document.getElementById("foto-preview").innerHTML='<div class="foto-add" onclick="document.getElementById(\'foto-input\').click()"><i class="ti ti-camera"></i></div>';document.getElementById("modal-ov").classList.add("show");toggleMFields();}
@@ -491,12 +488,22 @@ function handleOvClick(e){if(e.target===document.getElementById("modal-ov"))clos
 function toggleMFields(){const t=document.getElementById("m-tipo").value;document.getElementById("f-cultivar-sec").style.display=t==="cultivar"?"block":"none";document.getElementById("f-praga-sec").style.display=["praga","doenca","invasora"].includes(t)?"block":"none";document.getElementById("f-stand-sec").style.display=t==="stand"?"block":"none";document.getElementById("f-prod-sec").style.display=t==="producao"?"block":"none";document.getElementById("f-adub-sec").style.display=t==="adubacao"?"block":"none";}
 function handleFotos(e){[...e.target.files].forEach(f=>{const r=new FileReader();r.onload=ev=>{fotos.push({name:f.name,data:ev.target.result});const prev=document.getElementById("foto-preview"),add=prev.querySelector(".foto-add"),img=document.createElement("img");img.className="foto-thumb";img.src=ev.target.result;prev.insertBefore(img,add);};r.readAsDataURL(f);});}
 function savePonto(){const tipo=document.getElementById("m-tipo").value,titulo=document.getElementById("m-titulo").value.trim()||"Ponto "+(pontos.length+1),obs=document.getElementById("m-obs").value.trim(),el=startTime?Date.now()-startTime:0;
-  // guarda tanto pos relativa (canvas) quanto gps real
-  const p={id:Date.now(),tipo,titulo,obs,pos:{...simPos},gps:lastGPSPos?{...lastGPSPos}:null,time:pad(Math.floor(el/60000))+":"+pad(Math.floor((el%60000)/1000)),dist:totalDist.toFixed(2),fotos:[...fotos]};if(tipo==="cultivar")p.cultivar={a:{nome:g("c-a-nome"),stand:g("c-a-stand"),alt:g("c-a-alt"),nota:g("c-a-nota"),ndvi:g("c-a-ndvi")},b:{nome:g("c-b-nome"),stand:g("c-b-stand"),alt:g("c-b-alt"),nota:g("c-b-nota"),ndvi:g("c-b-ndvi")},diff:g("c-diff")};if(["praga","doenca","invasora"].includes(tipo))p.praga={especie:g("p-especie"),nivel:g("p-nivel"),perc:g("p-perc"),ind:g("p-ind"),rec:g("p-rec")};if(tipo==="stand")p.stand={plantas:g("s-plantas"),falhas:g("s-falhas"),esperado:g("s-esperado"),sit:g("s-sit")};if(tipo==="producao")p.prod={vag:g("pr-vag"),grao:g("pr-grao"),massa:g("pr-massa"),sc:g("pr-sc")};if(tipo==="adubacao")p.adub={sintoma:g("ad-sintoma"),nutri:g("ad-nutri"),int:g("ad-int"),perc:g("ad-perc")};pontos.push(p);renderPontos();drawMap();document.getElementById("vis-badge").textContent=pontos.length+" pt"+(pontos.length!==1?"s":"");closeModal();}
+  const p={id:Date.now(),tipo,titulo,obs,pos:{...simPos},gps:lastGPSPos?{...lastGPSPos}:null,time:pad(Math.floor(el/60000))+":"+pad(Math.floor((el%60000)/1000)),dist:totalDist.toFixed(2),fotos:[...fotos]};
+  if(tipo==="cultivar")p.cultivar={a:{nome:g("c-a-nome"),stand:g("c-a-stand"),alt:g("c-a-alt"),nota:g("c-a-nota"),ndvi:g("c-a-ndvi")},b:{nome:g("c-b-nome"),stand:g("c-b-stand"),alt:g("c-b-alt"),nota:g("c-b-nota"),ndvi:g("c-b-ndvi")},diff:g("c-diff")};
+  if(["praga","doenca","invasora"].includes(tipo))p.praga={especie:g("p-especie"),nivel:g("p-nivel"),perc:g("p-perc"),ind:g("p-ind"),rec:g("p-rec")};
+  if(tipo==="stand")p.stand={plantas:g("s-plantas"),falhas:g("s-falhas"),esperado:g("s-esperado"),sit:g("s-sit")};
+  if(tipo==="producao")p.prod={vag:g("pr-vag"),grao:g("pr-grao"),massa:g("pr-massa"),sc:g("pr-sc")};
+  if(tipo==="adubacao")p.adub={sintoma:g("ad-sintoma"),nutri:g("ad-nutri"),int:g("ad-int"),perc:g("ad-perc")};
+  pontos.push(p);
+  if(p.gps) mapAddPontoMarker(p, pontos.length-1);
+  renderPontos();
+  document.getElementById("vis-badge").textContent=pontos.length+" pt"+(pontos.length!==1?"s":"");
+  closeModal();
+}
 const TI={observacao:"🔍",cultivar:"🌱",praga:"🐛",doenca:"🍂",invasora:"🌿",solo:"🟫",agua:"💧",stand:"📏",producao:"📊",adubacao:"🧪",outro:"📋"};
 const TL={observacao:"Observação",cultivar:"Cultivar",praga:"Praga",doenca:"Doença",invasora:"Invasora",solo:"Solo",agua:"Hídrico",stand:"Stand",producao:"Produção",adubacao:"Adubação",outro:"Outro"};
 function renderPontos(){const list=document.getElementById("pontos-list");if(!pontos.length){list.innerHTML='<div style="padding:28px 16px;text-align:center;color:var(--text-faint);font-size:13px;font-weight:500;">Inicie e marque pontos durante a vistoria</div>';return;}list.innerHTML=pontos.map((p,i)=>{let d=`${TL[p.tipo]} · ${p.time} · ${p.dist} km`;if(p.obs)d+=` · ${p.obs.slice(0,50)}${p.obs.length>50?"...":""}`;if(p.cultivar)d+=`<br>${p.cultivar.a.nome||"A"}: ${p.cultivar.a.stand||"?"}pl/m ${p.cultivar.a.alt||"?"}cm nota${p.cultivar.a.nota||"?"} | ${p.cultivar.b.nome||"B"}: ${p.cultivar.b.stand||"?"}pl/m ${p.cultivar.b.alt||"?"}cm nota${p.cultivar.b.nota||"?"}`;if(p.praga)d+=`<br>${p.praga.especie||"—"} · ${p.praga.nivel} · ${p.praga.perc||"?"}% área`;if(p.stand)d+=`<br>Stand: ${p.stand.plantas||"?"}pl/m · Falhas: ${p.stand.falhas||"?"}%`;if(p.prod)d+=`<br>Est: ${p.prod.sc||"?"}sc/ha`;if(p.adub)d+=`<br>${p.adub.sintoma||""} (${p.adub.nutri||"?"})`;const ff=p.fotos&&p.fotos.length?'<div class="pt-fotos">'+p.fotos.map(f=>`<img src="${f.data}" alt="">`).join("")+"</div>":"";return`<div class="pt-item"><div class="pt-dot" style="background:${ptColor(p.tipo)}">${i+1}</div><div class="pt-body"><div class="pt-tit">${TI[p.tipo]} ${p.titulo}</div><div class="pt-det">${d}</div>${ff}</div><span class="pt-del" onclick="delPonto(${p.id})"><i class="ti ti-trash"></i></span></div>`;}).join("");}
-function delPonto(id){if(!confirm("Remover ponto?"))return;pontos=pontos.filter(p=>p.id!==id);renderPontos();drawMap();document.getElementById("vis-badge").textContent=pontos.length+" pt"+(pontos.length!==1?"s":"");}
+function delPonto(id){if(!confirm("Remover ponto?"))return;pontos=pontos.filter(p=>p.id!==id);renderPontos();document.getElementById("vis-badge").textContent=pontos.length+" pt"+(pontos.length!==1?"s":"");}
 function buildReport(){const a=currentArea||{},elapsed=pausedMs||(startTime?Date.now()-startTime:0),m=Math.floor(elapsed/60000),s=Math.floor((elapsed%60000)/1000),vel=totalDist>0&&elapsed>0?(totalDist/(elapsed/3600000)).toFixed(1):"—";let h=`<div class="rep-hero"><div class="rep-hero-t">${a.nome||"Vistoria"}</div><div class="rep-hero-s">${[a.cultura,a.cultivar,a.ha?a.ha+" ha":""].filter(Boolean).join(" · ")} · ${new Date().toLocaleDateString("pt-BR")}</div></div>`;h+=`<div class="rep-block"><h4>Área</h4>${RR("Fazenda",a.fazenda||"—")}${RR("Município",a.municipio||"—")}${RR("Safra",a.safra||"—")}${RR("Cultura",a.cultura||"—")}${RR("Cultivar",a.cultivar||"—")}${RR("Área",a.ha?a.ha+" ha":"—")}${RR("Estádio",a.estadio||"—")}${a.pop?RR("Espaçamento",a.pop):""}${a.semeadura?RR("Semeadura",fmtD(a.semeadura)):""}${a.objetivos&&a.objetivos.length?RR("Objetivos",a.objetivos.join(", ")):""}${a.obs?RR("Obs. iniciais",a.obs):""}</div>`;h+=`<div class="rep-block"><h4>Vistoria</h4>${RR("Data",new Date().toLocaleDateString("pt-BR"))}${RR("Início",startTime?new Date(startTime).toLocaleTimeString("pt-BR"):"—")}${RR("Duração",m+"min "+s+"s")}${RR("Distância",totalDist.toFixed(2)+" km")}${RR("Vel. média",vel+" km/h")}${RR("Pontos",pontos.length)}${RR("GPS",useGPS?"Real":"Simulação")}</div>`;h+='<div class="rep-block"><h4>Pontos</h4>';if(!pontos.length)h+='<p style="font-size:13px;color:var(--text-muted);padding:8px 0">Nenhum ponto marcado.</p>';else pontos.forEach((p,i)=>{let d=`Tipo: ${TL[p.tipo]} · Tempo: ${p.time} · Dist: ${p.dist}km${p.obs?"<br>Obs: "+p.obs:""}`;if(p.cultivar){const c=p.cultivar;d+=`<br><b>${c.a.nome||"A"}</b>: stand ${c.a.stand||"?"}pl/m, alt ${c.a.alt||"?"}cm, nota ${c.a.nota||"?"}/5, NDVI ${c.a.ndvi||"?"}<br><b>${c.b.nome||"B"}</b>: stand ${c.b.stand||"?"}pl/m, alt ${c.b.alt||"?"}cm, nota ${c.b.nota||"?"}/5, NDVI ${c.b.ndvi||"?"}${c.diff?"<br>Dif: "+c.diff:""}`;}if(p.praga)d+=`<br>${p.praga.especie||"—"} · ${p.praga.nivel} · ${p.praga.perc||"?"}% área · ${p.praga.ind||"?"}ind./m² · ${p.praga.rec}`;if(p.stand)d+=`<br>Stand: ${p.stand.plantas||"?"}pl/m · Falhas: ${p.stand.falhas||"?"}% · ${p.stand.sit}`;if(p.prod)d+=`<br>Vagens/pl: ${p.prod.vag||"?"} · Grãos: ${p.prod.grao||"?"} · Est: ${p.prod.sc||"?"}sc/ha`;if(p.adub)d+=`<br>${p.adub.sintoma||"?"} (${p.adub.nutri||"?"}) · Int: ${p.adub.int||"?"}/5 · ${p.adub.perc||"?"}% plantas`;h+=`<div class="rep-pt"><div class="rep-pt-t">${i+1}. ${TI[p.tipo]} ${p.titulo}</div><div class="rep-pt-d">${d}</div>${p.fotos&&p.fotos.length?'<div class="rep-pt-f">'+p.fotos.map(f=>`<img src="${f.data}">`).join("")+"</div>":""}</div>`;});h+="</div>";document.getElementById("report-content").innerHTML=h;}
 function RR(l,v){return`<div class="rep-row"><span class="rep-lbl">${l}</span><span class="rep-val">${v}</span></div>`;}
 function fmtD(s){if(!s)return"—";const[y,m,d]=s.split("-");return`${d}/${m}/${y}`;}
@@ -525,7 +532,7 @@ function dl(content,filename,type){const b=new Blob([content],{type}),u=URL.crea
 function slug(s){return(s||"campo").toLowerCase().replace(/\s+/g,"_").replace(/[^\w-]/g,"").slice(0,30);}
 function finalizarVistoria(){if(!confirm("Finalizar a vistoria?"))return;clearInterval(timerInt);clearInterval(simInt);if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;}tracking=false;if(startTime){pausedMs=Date.now()-startTime;stats.vis++;stats.km=parseFloat((stats.km+totalDist).toFixed(2));localStorage.setItem("ct_stats",JSON.stringify(stats));}buildReport();showScreen("scr-report");}
 function confirmarSaida(){if((tracking||pontos.length>0)&&!confirm("Sair da vistoria em andamento?"))return;clearInterval(timerInt);clearInterval(simInt);if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;}tracking=false;showScreen("scr-areas");}
-window.addEventListener("resize",()=>{if(document.getElementById("scr-vistoria").classList.contains("active"))resizeCanvas();});
+window.addEventListener("resize",()=>{if(lmap)lmap.invalidateSize();});
 renderAreas();
 </script>
 </body>
