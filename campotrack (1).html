@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>CampoTrack Pro</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --black:#0A0A0A;--g1:#1C1C1E;--g4:#636366;--g5:#8E8E93;--g6:#C7C7CC;--g7:#E5E5EA;--g8:#F2F2F7;
+  --white:#FFFFFF;
+  --accent:#00C96B;--accent-dark:#00A355;
+  --blue:#0A84FF;--red:#FF3B30;--amber:#FF9F0A;
+  --border:rgba(0,0,0,0.08);--border-med:rgba(0,0,0,0.13);
+  --text:#0A0A0A;--text-muted:#636366;--text-faint:#8E8E93;
+  --r:14px;--r-sm:10px;--r-xs:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:"Figtree",sans-serif;background:var(--g8);color:var(--text);-webkit-font-smoothing:antialiased;}
+#app{width:100%;max-width:430px;min-height:100vh;background:var(--g8);margin:0 auto;display:flex;flex-direction:column;}
+.screen{display:none;flex-direction:column;min-height:100vh;}
+.screen.active{display:flex;}
+
+.hdr{background:var(--white);padding:14px 16px;display:flex;align-items:center;gap:10px;border-bottom:0.5px solid var(--border);position:sticky;top:0;z-index:50;}
+.hdr-back{background:none;border:none;color:var(--blue);font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:2px;padding:0;}
+.hdr-back i{font-size:20px;}
+.hdr-title{font-size:17px;font-weight:800;letter-spacing:-0.4px;flex:1;}
+.hdr-center{text-align:center;}
+
+.hero{background:var(--black);padding:28px 20px 24px;position:relative;overflow:hidden;}
+.hero::after{content:"";position:absolute;top:-80px;right:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(0,201,107,0.15) 0%,transparent 70%);pointer-events:none;}
+.hero-eye{font-size:11px;font-weight:700;letter-spacing:1.4px;color:var(--accent);text-transform:uppercase;margin-bottom:6px;}
+.hero-h{font-size:34px;font-weight:900;color:var(--white);letter-spacing:-1px;line-height:1.05;}
+.hero-sub{font-size:14px;color:var(--g5);margin-top:7px;font-weight:500;}
+.hero-stats{display:flex;margin-top:22px;border-top:0.5px solid rgba(255,255,255,0.07);padding-top:18px;}
+.hs{flex:1;text-align:center;}
+.hs+.hs{border-left:0.5px solid rgba(255,255,255,0.07);}
+.hs-v{font-size:24px;font-weight:900;color:var(--white);letter-spacing:-0.8px;}
+.hs-l{font-size:10px;font-weight:700;color:var(--g5);text-transform:uppercase;letter-spacing:0.7px;margin-top:3px;}
+
+.card{background:var(--white);border-radius:var(--r);margin:0 12px 10px;overflow:hidden;}
+.card-hd{padding:12px 16px;border-bottom:0.5px solid var(--border);}
+.card-hd-t{font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.6px;display:flex;align-items:center;gap:6px;}
+.card-bd{padding:14px 16px;}
+
+.field{margin-bottom:13px;}
+.field:last-child{margin-bottom:0;}
+.field label{display:block;font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;}
+.field input,.field select,.field textarea{width:100%;padding:11px 13px;font-size:15px;font-weight:500;font-family:"Figtree",sans-serif;background:var(--g8);color:var(--text);border:1.5px solid transparent;border-radius:var(--r-sm);transition:border-color .15s,background .15s;appearance:none;-webkit-appearance:none;}
+.field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238E8E93' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;padding-right:34px;}
+.field textarea{resize:vertical;min-height:70px;}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent);background:var(--white);}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:14px 18px;font-size:15px;font-weight:700;font-family:"Figtree",sans-serif;border-radius:var(--r-sm);border:none;cursor:pointer;transition:all .14s;white-space:nowrap;letter-spacing:-0.2px;}
+.btn-full{width:100%;}
+.btn-black{background:var(--black);color:var(--white);}
+.btn-black:active{opacity:.85;}
+.btn-accent{background:var(--accent);color:var(--black);}
+.btn-accent:active{filter:brightness(.9);}
+.btn-red{background:var(--red);color:var(--white);}
+.btn-red:active{filter:brightness(.9);}
+.btn-ghost{background:var(--white);color:var(--text);border:1.5px solid var(--border-med);}
+.btn-ghost:active{background:var(--g8);}
+.btn:disabled{opacity:.35;pointer-events:none;}
+.btn-row{display:flex;gap:8px;padding:0 12px 12px;}
+.btn-row .btn{flex:1;}
+
+.chips{display:flex;flex-wrap:wrap;gap:7px;}
+.chip{padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid var(--border-med);color:var(--text-muted);background:var(--white);transition:all .12s;user-select:none;}
+.chip.sel{background:var(--black);border-color:var(--black);color:var(--white);}
+
+.area-item{display:flex;align-items:center;gap:13px;padding:14px 16px;border-bottom:0.5px solid var(--border);cursor:pointer;background:var(--white);transition:background .1s;}
+.area-item:last-child{border-bottom:none;}
+.area-item:active{background:var(--g8);}
+.area-icon{width:46px;height:46px;border-radius:12px;background:var(--black);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+.area-name{font-size:15px;font-weight:700;letter-spacing:-0.2px;}
+.area-sub{font-size:12px;color:var(--text-muted);margin-top:2px;font-weight:500;}
+.area-sub2{font-size:11px;color:var(--text-faint);margin-top:1px;font-weight:500;}
+.area-arr{color:var(--g6);font-size:16px;margin-left:auto;flex-shrink:0;}
+
+.empty{text-align:center;padding:64px 24px;}
+.empty i{font-size:52px;display:block;margin-bottom:14px;color:var(--g6);}
+.empty-t{font-size:17px;font-weight:700;}
+.empty-s{font-size:14px;color:var(--text-muted);margin-top:4px;}
+
+#map-wrap{position:relative;flex-shrink:0;}
+#map-canvas{width:100%;height:280px;display:block;}
+.map-pill{position:absolute;bottom:12px;left:12px;right:12px;background:rgba(10,10,10,0.88);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);color:var(--white);border-radius:12px;padding:9px 14px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:9px;}
+.gps-pill{position:absolute;top:12px;right:12px;background:rgba(10,10,10,0.78);backdrop-filter:blur(8px);color:var(--white);border-radius:8px;padding:5px 11px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:6px;}
+.sdot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.sdot.idle{background:var(--g4);}
+.sdot.rec{background:#FF3B30;animation:bl 1.1s infinite;}
+.sdot.paused{background:var(--amber);}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:.2}}
+
+.stats-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px;}
+.stat-card{background:var(--white);border-radius:var(--r-sm);padding:12px 16px;}
+.stat-l{font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;}
+.stat-v{font-size:28px;font-weight:900;letter-spacing:-1.2px;font-variant-numeric:tabular-nums;line-height:1.1;}
+.stat-u{font-size:11px;color:var(--text-faint);font-weight:600;margin-top:2px;}
+
+.ctrl-row{display:flex;gap:8px;padding:0 12px 12px;}
+.ctrl-row .btn{flex:1;padding:13px 10px;font-size:13px;}
+.ctrl-row .btn-sq{flex:0 0 50px;padding:13px 0;}
+
+.pontos-wrap{flex:1;overflow-y:auto;background:var(--white);border-top:0.5px solid var(--border);}
+.pontos-lbl{font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.6px;padding:10px 16px 6px;}
+.pt-item{display:flex;align-items:flex-start;gap:11px;padding:11px 16px;border-bottom:0.5px solid var(--border);}
+.pt-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--white);flex-shrink:0;margin-top:1px;}
+.pt-body{flex:1;min-width:0;}
+.pt-tit{font-size:14px;font-weight:700;letter-spacing:-0.2px;}
+.pt-det{font-size:12px;color:var(--text-muted);margin-top:2px;line-height:1.55;font-weight:500;}
+.pt-del{color:var(--g6);font-size:18px;cursor:pointer;padding:2px;flex-shrink:0;}
+.pt-del:active{color:var(--red);}
+.pt-fotos{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;}
+.pt-fotos img{width:54px;height:54px;border-radius:8px;object-fit:cover;}
+
+.bot-bar{display:flex;gap:8px;padding:10px 12px 22px;background:var(--white);border-top:0.5px solid var(--border);}
+.bot-bar .btn{flex:1;padding:13px 8px;font-size:12px;}
+
+#modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-end;backdrop-filter:blur(5px);}
+#modal-ov.show{display:flex;}
+#modal-box{background:var(--white);border-radius:22px 22px 0 0;padding:0 16px 28px;width:100%;max-width:430px;margin:0 auto;max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch;animation:su .22s cubic-bezier(.32,0,.67,0);}
+@keyframes su{from{transform:translateY(48px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-drag{width:36px;height:4px;background:var(--g7);border-radius:2px;margin:12px auto 16px;}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.modal-hdr h3{font-size:18px;font-weight:800;letter-spacing:-0.4px;}
+.modal-close{width:30px;height:30px;border-radius:50%;background:var(--g8);border:none;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-muted);}
+
+.sec-div{font-size:11px;font-weight:800;letter-spacing:0.8px;text-transform:uppercase;color:var(--accent);margin:14px 0 8px;display:flex;align-items:center;gap:6px;}
+.cult-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.cult-card{background:var(--g8);border-radius:var(--r-xs);padding:10px 12px;}
+.cult-card label{font-size:10px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;display:block;}
+.cult-card input{width:100%;border:none;background:none;font-size:14px;font-weight:700;color:var(--text);padding:0;font-family:"Figtree",sans-serif;}
+.cult-card input:focus{outline:none;}
+.sel-mini{width:100%;border:none;background:none;font-size:14px;font-weight:700;color:var(--text);padding:0;font-family:"Figtree",sans-serif;cursor:pointer;}
+.sel-mini:focus{outline:none;}
+
+#foto-input{display:none;}
+.foto-wrap{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+.foto-thumb{width:58px;height:58px;border-radius:10px;object-fit:cover;}
+.foto-add{width:58px;height:58px;border-radius:10px;border:2px dashed var(--border-med);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);font-size:24px;background:var(--g8);}
+.foto-add:active{border-color:var(--accent);color:var(--accent);}
+
+.rep-hero{background:var(--black);padding:22px 20px;}
+.rep-hero-t{font-size:22px;font-weight:900;color:var(--white);letter-spacing:-0.5px;}
+.rep-hero-s{font-size:13px;color:var(--g5);margin-top:4px;font-weight:500;}
+.rep-block{background:var(--white);padding:0 16px;margin-bottom:2px;}
+.rep-block h4{font-size:11px;font-weight:800;letter-spacing:0.7px;text-transform:uppercase;color:var(--text-muted);padding:14px 0 10px;border-bottom:0.5px solid var(--border);}
+.rep-row{display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:14px;gap:10px;}
+.rep-row:last-child{border:none;}
+.rep-lbl{color:var(--text-muted);font-weight:500;}
+.rep-val{font-weight:700;text-align:right;}
+.rep-pt{padding:12px;background:var(--g8);border-radius:var(--r-xs);margin-bottom:8px;border-left:3px solid var(--accent);}
+.rep-pt-t{font-size:14px;font-weight:800;letter-spacing:-0.2px;}
+.rep-pt-d{font-size:12px;color:var(--text-muted);margin-top:4px;line-height:1.6;font-weight:500;}
+.rep-pt-f{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap;}
+.rep-pt-f img{width:50px;height:50px;border-radius:7px;object-fit:cover;}
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:24px;}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- AREAS -->
+<div class="screen active" id="scr-areas">
+  <div class="hero">
+    <div class="hero-eye">CampoTrack Pro</div>
+    <div class="hero-h">Vistoria<br>de campo</div>
+    <div class="hero-sub">Rastreamento · Pontos · KML · Relatório</div>
+    <div class="hero-stats">
+      <div class="hs"><div class="hs-v" id="ss-areas">0</div><div class="hs-l">Áreas</div></div>
+      <div class="hs"><div class="hs-v" id="ss-vis">0</div><div class="hs-l">Vistorias</div></div>
+      <div class="hs"><div class="hs-v" id="ss-km">0.0</div><div class="hs-l">km total</div></div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 16px 8px;">
+    <span style="font-size:12px;font-weight:800;letter-spacing:0.5px;color:var(--text-muted);text-transform:uppercase;">Suas áreas</span>
+    <button class="btn btn-black" style="padding:9px 16px;font-size:13px;" onclick="showScreen('scr-nova-area')"><i class="ti ti-plus"></i> Nova área</button>
+  </div>
+  <div id="areas-empty" class="empty" style="display:none;"><i class="ti ti-map-off"></i><div class="empty-t">Nenhuma área ainda</div><div class="empty-s">Cadastre sua primeira área para começar</div></div>
+  <div class="card" id="areas-card" style="display:none;padding:0;"><div id="areas-list"></div></div>
+</div>
+
+<!-- NOVA AREA -->
+<div class="screen" id="scr-nova-area">
+  <div class="hdr">
+    <button class="hdr-back" onclick="showScreen('scr-areas')"><i class="ti ti-chevron-left"></i> Áreas</button>
+    <div class="hdr-title hdr-center">Nova área</div>
+    <div style="width:70px;"></div>
+  </div>
+  <div class="scroll">
+    <div class="card" style="margin-top:14px;">
+      <div class="card-hd"><div class="card-hd-t"><i class="ti ti-map-pin"></i> Identificação</div></div>
+      <div class="card-bd">
+        <div class="field"><label>Nome do talhão *</label><input id="f-nome" placeholder="Ex: Talhão A2 — Fundos"/></div>
+        <div class="field"><label>Fazenda / Produtor</label><input id="f-fazenda" placeholder="Ex: Fazenda Santa Fé"/></div>
+        <div class="field"><label>Município</label><input id="f-municipio" placeholder="Ex: Vacaria — RS"/></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-hd-t"><i class="ti ti-wheat"></i> Safra e cultura</div></div>
+      <div class="card-bd">
+        <div class="field"><label>Safra</label><select id="f-safra"><option>2025/2026</option><option>2026/2027</option><option>2024/2025</option><option>Safrinha 2026</option><option>Safrinha 2027</option></select></div>
+        <div class="field"><label>Cultura *</label><select id="f-cultura"><option value="">Selecione...</option><option>Soja</option><option>Milho</option><option>Trigo</option><option>Feijão</option><option>Canola</option><option>Aveia</option><option>Sorgo</option><option>Girassol</option><option>Outra</option></select></div>
+        <div class="field"><label>Cultivar / Variedade</label><input id="f-cultivar" placeholder="Ex: DM 5958 IPRO"/></div>
+        <div class="field"><label>Área (hectares)</label><input id="f-ha" type="number" step="0.1" min="0" placeholder="Ex: 42.5"/></div>
+        <div class="field"><label>Estádio fenológico</label><select id="f-estadio"><option value="">Selecione...</option><option>Emergência (VE)</option><option>V1 – V3</option><option>V4 – V6</option><option>V7+</option><option>R1 – Florescimento</option><option>R2 – Pleno florescimento</option><option>R3 – Formação de vagem</option><option>R4 – Enchimento de grão</option><option>R5 – Grão</option><option>R6 – Maturidade fisiológica</option><option>R7 – Pré-colheita</option></select></div>
+        <div class="field"><label>Espaçamento / população</label><input id="f-pop" placeholder="Ex: 0,45m / 350.000 pl/ha"/></div>
+        <div class="field"><label>Data de semeadura</label><input id="f-semeadura" type="date"/></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-hd-t"><i class="ti ti-target"></i> Objetivo da vistoria</div></div>
+      <div class="card-bd">
+        <div class="chips" id="obj-chips">
+          <span class="chip" onclick="toggleChip(this)">Comparação de cultivar</span>
+          <span class="chip" onclick="toggleChip(this)">Monitoramento de pragas</span>
+          <span class="chip" onclick="toggleChip(this)">Doenças foliares</span>
+          <span class="chip" onclick="toggleChip(this)">Plantas daninhas</span>
+          <span class="chip" onclick="toggleChip(this)">Fertilidade do solo</span>
+          <span class="chip" onclick="toggleChip(this)">Estimativa de produção</span>
+          <span class="chip" onclick="toggleChip(this)">Verificação de stand</span>
+          <span class="chip" onclick="toggleChip(this)">Irrigação / drenagem</span>
+          <span class="chip" onclick="toggleChip(this)">Adubação de cobertura</span>
+          <span class="chip" onclick="toggleChip(this)">Avaliação pré-colheita</span>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-hd-t"><i class="ti ti-note"></i> Observações iniciais</div></div>
+      <div class="card-bd"><div class="field"><textarea id="f-obs" placeholder="Histórico, problemas anteriores, condições..."></textarea></div></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="showScreen('scr-areas')" style="flex:1;">Cancelar</button>
+      <button class="btn btn-accent" onclick="salvarArea()" style="flex:2;"><i class="ti ti-check"></i> Salvar e iniciar</button>
+    </div>
+  </div>
+</div>
+
+<!-- VISTORIA -->
+<div class="screen" id="scr-vistoria">
+  <div class="hdr" style="background:var(--black);border-color:rgba(255,255,255,0.07);">
+    <button class="hdr-back" style="color:var(--accent);" onclick="confirmarSaida()"><i class="ti ti-chevron-left"></i> Áreas</button>
+    <div class="hdr-title hdr-center" style="color:var(--white);font-size:15px;" id="vis-title">Vistoria</div>
+    <span style="font-size:11px;font-weight:700;background:rgba(0,201,107,0.15);color:var(--accent);padding:3px 10px;border-radius:20px;white-space:nowrap;" id="vis-badge">0 pts</span>
+  </div>
+  <div id="map-wrap">
+    <canvas id="map-canvas"></canvas>
+    <div class="gps-pill"><span class="sdot idle" id="sdot"></span><span id="gps-txt">GPS</span></div>
+    <div class="map-pill"><div class="sdot idle" id="sdot2"></div><span id="stext">Pronto para iniciar</span></div>
+  </div>
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-l">Distância</div><div class="stat-v" id="sv-dist">0.00</div><div class="stat-u">km</div></div>
+    <div class="stat-card"><div class="stat-l">Tempo</div><div class="stat-v" id="sv-time">00:00</div><div class="stat-u">h : min</div></div>
+  </div>
+  <div class="ctrl-row">
+    <button class="btn btn-accent" id="btn-track" onclick="toggleTracking()" style="flex:2;"><i class="ti ti-player-play" id="track-icon"></i><span id="track-lbl">Iniciar</span></button>
+    <button class="btn btn-ghost btn-sq" id="btn-ponto" onclick="showModalPonto()" disabled><i class="ti ti-map-pin" style="font-size:20px;"></i></button>
+    <button class="btn btn-ghost btn-sq" onclick="buildReport();showScreen('scr-report')"><i class="ti ti-clipboard-text" style="font-size:20px;"></i></button>
+  </div>
+  <div class="pontos-wrap">
+    <div class="pontos-lbl">Pontos marcados</div>
+    <div id="pontos-list"></div>
+  </div>
+  <div class="bot-bar">
+    <button class="btn btn-ghost" onclick="exportKML()"><i class="ti ti-download"></i> KML</button>
+    <button class="btn btn-ghost" onclick="exportTXT()"><i class="ti ti-file-text"></i> TXT</button>
+    <button class="btn btn-red" onclick="finalizarVistoria()"><i class="ti ti-flag-3"></i> Finalizar</button>
+  </div>
+</div>
+
+<!-- RELATORIO -->
+<div class="screen" id="scr-report">
+  <div class="hdr" style="background:var(--black);border-color:rgba(255,255,255,0.07);">
+    <button class="hdr-back" style="color:var(--accent);" onclick="showScreen('scr-vistoria')"><i class="ti ti-chevron-left"></i> Vistoria</button>
+    <div class="hdr-title hdr-center" style="color:var(--white);font-size:15px;">Relatório</div>
+    <span id="rep-date" style="font-size:11px;color:var(--g5);font-weight:600;white-space:nowrap;"></span>
+  </div>
+  <div class="scroll" id="report-content" style="padding-bottom:0;"></div>
+  <div class="bot-bar">
+    <button class="btn btn-ghost" onclick="exportKML()"><i class="ti ti-map"></i> KML</button>
+    <button class="btn btn-ghost" onclick="exportTXT()"><i class="ti ti-download"></i> TXT</button>
+    <button class="btn btn-accent" onclick="showScreen('scr-vistoria')"><i class="ti ti-arrow-left"></i> Voltar</button>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div id="modal-ov" onclick="handleOvClick(event)">
+  <div id="modal-box">
+    <div class="modal-drag"></div>
+    <div class="modal-hdr"><h3>Marcar ponto</h3><button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button></div>
+    <div class="field"><label>Tipo</label>
+      <select id="m-tipo" onchange="toggleMFields()">
+        <option value="observacao">🔍 Observação geral</option>
+        <option value="cultivar">🌱 Comparação de cultivar</option>
+        <option value="praga">🐛 Praga / inseto</option>
+        <option value="doenca">🍂 Doença foliar</option>
+        <option value="invasora">🌿 Planta invasora</option>
+        <option value="solo">🟫 Solo / erosão</option>
+        <option value="agua">💧 Problema hídrico</option>
+        <option value="stand">📏 Verificação de stand</option>
+        <option value="producao">📊 Estimativa de produção</option>
+        <option value="adubacao">🧪 Adubação / nutrição</option>
+        <option value="outro">📋 Outro</option>
+      </select>
+    </div>
+    <div class="field"><label>Título</label><input id="m-titulo" placeholder="Descreva brevemente..."/></div>
+    <div id="f-cultivar-sec" style="display:none;">
+      <div class="sec-div"><i class="ti ti-arrows-diff"></i> Cultivares</div>
+      <div class="cult-grid">
+        <div class="cult-card"><label>Cultivar A</label><input id="c-a-nome" placeholder="Nome"/></div>
+        <div class="cult-card"><label>Cultivar B</label><input id="c-b-nome" placeholder="Nome"/></div>
+        <div class="cult-card"><label>Stand A (pl/m)</label><input id="c-a-stand" type="number" placeholder="0"/></div>
+        <div class="cult-card"><label>Stand B (pl/m)</label><input id="c-b-stand" type="number" placeholder="0"/></div>
+        <div class="cult-card"><label>Altura A (cm)</label><input id="c-a-alt" type="number" placeholder="0"/></div>
+        <div class="cult-card"><label>Altura B (cm)</label><input id="c-b-alt" type="number" placeholder="0"/></div>
+        <div class="cult-card"><label>Nota A (1–5)</label><input id="c-a-nota" type="number" min="1" max="5" placeholder="—"/></div>
+        <div class="cult-card"><label>Nota B (1–5)</label><input id="c-b-nota" type="number" min="1" max="5" placeholder="—"/></div>
+        <div class="cult-card"><label>NDVI A</label><input id="c-a-ndvi" placeholder="0.00"/></div>
+        <div class="cult-card"><label>NDVI B</label><input id="c-b-ndvi" placeholder="0.00"/></div>
+      </div>
+      <div class="field"><label>Diferença observada</label><textarea id="c-diff" placeholder="Diferenças visuais, desenvolvimento..."></textarea></div>
+    </div>
+    <div id="f-praga-sec" style="display:none;">
+      <div class="sec-div"><i class="ti ti-bug"></i> Ocorrência</div>
+      <div class="cult-grid">
+        <div class="cult-card"><label>Espécie</label><input id="p-especie" placeholder="Ex: Percevejo"/></div>
+        <div class="cult-card"><label>Nível</label><select class="sel-mini" id="p-nivel"><option>Baixo</option><option>Médio</option><option>Alto</option><option>Crítico</option></select></div>
+        <div class="cult-card"><label>% área afetada</label><input id="p-perc" type="number" placeholder="0"/></div>
+        <div class="cult-card"><label>Ind./m²</label><input id="p-ind" type="number" placeholder="0"/></div>
+      </div>
+      <div class="field"><label>Recomendação</label><select id="p-rec"><option>Abaixo do nível de controle</option><option>No nível — monitorar</option><option>Acima do nível — controle necessário</option><option>Emergência — ação imediata</option></select></div>
+    </div>
+    <div id="f-stand-sec" style="display:none;">
+      <div class="sec-div"><i class="ti ti-align-justified"></i> Stand</div>
+      <div class="cult-grid">
+        <div class="cult-card"><label>Plantas/m linear</label><input id="s-plantas" type="number" placeholder="0"/></div>
+        <div class="cult-card"><label>Falhas (%)</label><input id="s-falhas" type="number" placeholder="0"/></div>
+        <div class="cult-card"><label>Stand esperado</label><input id="s-esperado" placeholder="pl/m"/></div>
+        <div class="cult-card"><label>Situação</label><select class="sel-mini" id="s-sit"><option>Adequado</option><option>Abaixo do esperado</option><option>Acima do esperado</option><option>Irregular / falhas</option></select></div>
+      </div>
+    </div>
+    <div id="f-prod-sec" style="display:none;">
+      <div class="sec-div"><i class="ti ti-chart-bar"></i> Produção</div>
+      <div class="cult-grid">
+        <div class="cult-card"><label>Vagens/planta</label><input id="pr-vag" type="number" placeholder="0"/></div>
+        <div class="cult-card"><label>Grãos/vagem</label><input id="pr-grao" type="number" placeholder="0"/></div>
+        <div class="cult-card"><label>Massa 1000g (g)</label><input id="pr-massa" type="number" placeholder="0"/></div>
+        <div class="cult-card"><label>Est. sc/ha</label><input id="pr-sc" type="number" placeholder="0"/></div>
+      </div>
+    </div>
+    <div id="f-adub-sec" style="display:none;">
+      <div class="sec-div"><i class="ti ti-flask"></i> Nutrição</div>
+      <div class="cult-grid">
+        <div class="cult-card"><label>Sintoma</label><input id="ad-sintoma" placeholder="Ex: Clorose"/></div>
+        <div class="cult-card"><label>Nutriente</label><input id="ad-nutri" placeholder="Ex: Mn"/></div>
+        <div class="cult-card"><label>Intensidade (1–5)</label><input id="ad-int" type="number" min="1" max="5" placeholder="—"/></div>
+        <div class="cult-card"><label>% plantas</label><input id="ad-perc" type="number" placeholder="0"/></div>
+      </div>
+    </div>
+    <div class="field"><label>Observações</label><textarea id="m-obs" placeholder="Detalhes adicionais..."></textarea></div>
+    <div class="field"><label>Fotos</label>
+      <div class="foto-wrap" id="foto-preview"><div class="foto-add" onclick="document.getElementById('foto-input').click()"><i class="ti ti-camera"></i></div></div>
+      <input type="file" id="foto-input" accept="image/*" multiple onchange="handleFotos(event)"/>
+    </div>
+    <div class="btn-row" style="padding-left:0;padding-right:0;">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-accent" style="flex:2;" onclick="savePonto()"><i class="ti ti-check"></i> Salvar ponto</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let areas=JSON.parse(localStorage.getItem("ct_areas")||"[]");
+let stats=JSON.parse(localStorage.getItem("ct_stats")||'{"vis":0,"km":0}');
+let currentArea=null,tracking=false,paused=false,startTime=null,pausedMs=0;
+let timerInt=null,simInt=null,watchId=null,useGPS=false,lastGPSPos=null;
+let path=[],pontos=[],fotos=[],simPos={x:.45,y:.45},simAngle=Math.random()*Math.PI*2,totalDist=0;
+function showScreen(id){document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));document.getElementById(id).classList.add("active");if(id==="scr-areas")renderAreas();if(id==="scr-vistoria")setTimeout(resizeCanvas,60);if(id==="scr-report"){buildReport();document.getElementById("rep-date").textContent=new Date().toLocaleDateString("pt-BR");}}
+function toggleChip(el){el.classList.toggle("sel");}
+function getChips(){return[...document.querySelectorAll("#obj-chips .chip.sel")].map(c=>c.textContent);}
+function updateSplash(){document.getElementById("ss-areas").textContent=areas.length;document.getElementById("ss-vis").textContent=stats.vis;document.getElementById("ss-km").textContent=stats.km.toFixed(1);}
+const CICONS={Soja:"🌱",Milho:"🌽",Trigo:"🌾",Feijão:"🫘",Canola:"🌼",Aveia:"🌿",Sorgo:"🍀",Girassol:"🌻","":"🌿"};
+function renderAreas(){updateSplash();const list=document.getElementById("areas-list"),empty=document.getElementById("areas-empty"),card=document.getElementById("areas-card");if(!areas.length){empty.style.display="block";card.style.display="none";list.innerHTML="";return;}empty.style.display="none";card.style.display="block";list.innerHTML=areas.map((a,i)=>`<div class="area-item" onclick="abrirVistoria(${i})"><div class="area-icon">${CICONS[a.cultura]||"🌿"}</div><div style="flex:1;min-width:0;"><div class="area-name">${a.nome}</div><div class="area-sub">${[a.cultura,a.cultivar,a.ha?a.ha+" ha":"",a.safra].filter(Boolean).join(" · ")}</div>${a.estadio?`<div class="area-sub2">${a.estadio}${a.municipio?" · "+a.municipio:""}</div>`:""}</div><i class="ti ti-chevron-right area-arr"></i></div>`).join("")+`<div style="padding:12px 16px;"><button onclick="limparAreas()" style="width:100%;padding:10px;background:none;border:1.5px solid var(--border-med);border-radius:8px;font-size:12px;font-weight:600;color:var(--text-muted);cursor:pointer;font-family:Figtree,sans-serif;"><i class="ti ti-trash" style="font-size:14px;vertical-align:-2px;"></i> Limpar todas as áreas</button></div>`;}
+function g(id){const e=document.getElementById(id);return e?e.value.trim():"";}
+function salvarArea(){const nome=g("f-nome");if(!nome){alert("Informe o nome da área.");return;}const a={nome,fazenda:g("f-fazenda"),municipio:g("f-municipio"),safra:g("f-safra"),cultura:g("f-cultura"),cultivar:g("f-cultivar"),ha:g("f-ha"),estadio:g("f-estadio"),pop:g("f-pop"),semeadura:g("f-semeadura"),objetivos:getChips(),obs:g("f-obs"),data:new Date().toLocaleDateString("pt-BR"),id:Date.now()};areas.push(a);localStorage.setItem("ct_areas",JSON.stringify(areas));["f-nome","f-fazenda","f-municipio","f-cultivar","f-ha","f-pop","f-semeadura","f-obs"].forEach(id=>document.getElementById(id).value="");document.getElementById("f-cultura").value="";document.getElementById("f-estadio").value="";document.querySelectorAll("#obj-chips .chip.sel").forEach(c=>c.classList.remove("sel"));currentArea=a;resetVistoria();showScreen("scr-vistoria");}
+function abrirVistoria(i){currentArea=areas[i];resetVistoria();showScreen("scr-vistoria");}
+function limparAreas(){if(!confirm("Apagar todas as áreas?"))return;areas=[];localStorage.setItem("ct_areas",JSON.stringify(areas));renderAreas();}
+function resetVistoria(){tracking=false;paused=false;clearInterval(timerInt);clearInterval(simInt);if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;}path=[];pontos=[];fotos=[];totalDist=0;startTime=null;pausedMs=0;lastGPSPos=null;simPos={x:.25+Math.random()*.5,y:.25+Math.random()*.5};simAngle=Math.random()*Math.PI*2;document.getElementById("sv-dist").textContent="0.00";document.getElementById("sv-time").textContent="00:00";["sdot","sdot2"].forEach(id=>document.getElementById(id).className="sdot idle");document.getElementById("stext").textContent="Pronto para iniciar";document.getElementById("track-icon").className="ti ti-player-play";document.getElementById("track-lbl").textContent="Iniciar";document.getElementById("btn-track").className="btn btn-accent";document.getElementById("btn-ponto").disabled=true;document.getElementById("vis-title").textContent=currentArea?currentArea.nome:"Vistoria";document.getElementById("vis-badge").textContent="0 pts";document.getElementById("gps-txt").textContent="GPS";renderPontos();setTimeout(()=>{resizeCanvas();drawMap();},80);}
+const canvas=document.getElementById("map-canvas"),ctx=canvas.getContext("2d");
+function resizeCanvas(){const w=document.getElementById("map-wrap");canvas.width=w.clientWidth;canvas.height=280;drawMap();}
+function drawMap(){const W=canvas.width,H=canvas.height;ctx.clearRect(0,0,W,H);ctx.fillStyle="#1a2e1a";ctx.fillRect(0,0,W,H);ctx.strokeStyle="rgba(255,255,255,0.025)";ctx.lineWidth=1;for(let y=0;y<H;y+=16){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}const cx=W*.5,cy=H*.48,rx=W*.43,ry=H*.41;ctx.beginPath();ctx.ellipse(cx,cy,rx,ry,-.15,0,Math.PI*2);ctx.fillStyle="rgba(0,201,107,0.07)";ctx.fill();ctx.strokeStyle="rgba(0,201,107,0.45)";ctx.lineWidth=1.5;ctx.setLineDash([8,5]);ctx.stroke();ctx.setLineDash([]);if(path.length>1){ctx.beginPath();ctx.strokeStyle="rgba(0,201,107,0.2)";ctx.lineWidth=10;ctx.lineJoin="round";ctx.lineCap="round";path.forEach((p,i)=>i===0?ctx.moveTo(p.x*W,p.y*H):ctx.lineTo(p.x*W,p.y*H));ctx.stroke();ctx.beginPath();ctx.strokeStyle="#00C96B";ctx.lineWidth=2.5;path.forEach((p,i)=>i===0?ctx.moveTo(p.x*W,p.y*H):ctx.lineTo(p.x*W,p.y*H));ctx.stroke();}pontos.forEach((p,i)=>{const px=p.pos.x*W,py=p.pos.y*H;ctx.beginPath();ctx.arc(px,py,13,0,Math.PI*2);ctx.fillStyle=ptColor(p.tipo);ctx.fill();ctx.strokeStyle="#fff";ctx.lineWidth=2;ctx.stroke();ctx.fillStyle="#fff";ctx.font="bold 11px Figtree,sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(i+1,px,py);});if(path.length>0){const l=path[path.length-1],lx=l.x*W,ly=l.y*H;ctx.beginPath();ctx.arc(lx,ly,18,0,Math.PI*2);ctx.strokeStyle="rgba(0,201,107,0.25)";ctx.lineWidth=6;ctx.stroke();ctx.beginPath();ctx.arc(lx,ly,8,0,Math.PI*2);ctx.fillStyle="#fff";ctx.fill();ctx.beginPath();ctx.arc(lx,ly,5.5,0,Math.PI*2);ctx.fillStyle="#00C96B";ctx.fill();}}
+function ptColor(t){return{observacao:"#0A84FF",cultivar:"#00C96B",praga:"#FF6B35",doenca:"#FF9F0A",invasora:"#30D158",solo:"#8E8E93",agua:"#5AC8FA",stand:"#64D2FF",producao:"#BF5AF2",adubacao:"#FFD60A",outro:"#636366"}[t]||"#636366";}
+function pad(n){return n.toString().padStart(2,"0");}
+function toggleTracking(){!tracking?startTracking():pauseTracking();}
+function startTracking(){tracking=true;paused=false;startTime=Date.now()-pausedMs;document.getElementById("btn-track").className="btn btn-red";document.getElementById("track-icon").className="ti ti-player-pause";document.getElementById("track-lbl").textContent="Pausar";["sdot","sdot2"].forEach(id=>document.getElementById(id).className="sdot rec");document.getElementById("stext").textContent="Rastreando...";document.getElementById("btn-ponto").disabled=false;if(path.length===0)path.push({...simPos});timerInt=setInterval(()=>{const el=Date.now()-startTime;document.getElementById("sv-time").textContent=pad(Math.floor(el/60000))+":"+pad(Math.floor((el%60000)/1000));},1000);if(navigator.geolocation){watchId=navigator.geolocation.watchPosition(pos=>{useGPS=true;const{latitude:lat,longitude:lng}=pos.coords;const nx=Math.max(.05,Math.min(.95,(lng+54)/2)),ny=Math.max(.05,Math.min(.95,(-26-lat)/3));if(lastGPSPos){totalDist+=geoD(lastGPSPos.lat,lastGPSPos.lng,lat,lng)/1000;document.getElementById("sv-dist").textContent=totalDist.toFixed(2);}lastGPSPos={lat,lng};simPos={x:nx,y:ny};path.push({...simPos});if(path.length>1000)path.shift();document.getElementById("gps-txt").textContent="±"+Math.round(pos.coords.accuracy||0)+"m";drawMap();},()=>{useGPS=false;startSim();},{enableHighAccuracy:true,maximumAge:2000,timeout:5000});setTimeout(()=>{if(!useGPS)startSim();},5000);}else startSim();}
+function startSim(){document.getElementById("gps-txt").textContent="Demo";simInt=setInterval(()=>{simAngle+=(Math.random()-.5)*.55;const sp=.007+Math.random()*.005;let nx=Math.max(.07,Math.min(.93,simPos.x+Math.cos(simAngle)*sp)),ny=Math.max(.07,Math.min(.93,simPos.y+Math.sin(simAngle)*sp));totalDist+=Math.sqrt(Math.pow((nx-simPos.x)*.1,2)+Math.pow((ny-simPos.y)*.09,2))*800;document.getElementById("sv-dist").textContent=totalDist.toFixed(2);simPos={x:nx,y:ny};path.push({...simPos});if(path.length>1000)path.shift();drawMap();},500);}
+function pauseTracking(){tracking=false;paused=true;pausedMs=Date.now()-startTime;clearInterval(timerInt);clearInterval(simInt);if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;}document.getElementById("btn-track").className="btn btn-accent";document.getElementById("track-icon").className="ti ti-player-play";document.getElementById("track-lbl").textContent="Retomar";["sdot","sdot2"].forEach(id=>document.getElementById(id).className="sdot paused");document.getElementById("stext").textContent=`Pausado · ${pontos.length} ponto(s) · ${totalDist.toFixed(2)} km`;}
+function geoD(a,b,c,d){const R=6371000,p1=a*Math.PI/180,p2=c*Math.PI/180,dp=(c-a)*Math.PI/180,dl=(d-b)*Math.PI/180,x=Math.sin(dp/2)**2+Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)**2;return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
+function showModalPonto(){fotos=[];document.getElementById("m-titulo").value="";document.getElementById("m-obs").value="";document.getElementById("foto-preview").innerHTML='<div class="foto-add" onclick="document.getElementById(\'foto-input\').click()"><i class="ti ti-camera"></i></div>';document.getElementById("modal-ov").classList.add("show");toggleMFields();}
+function closeModal(){document.getElementById("modal-ov").classList.remove("show");}
+function handleOvClick(e){if(e.target===document.getElementById("modal-ov"))closeModal();}
+function toggleMFields(){const t=document.getElementById("m-tipo").value;document.getElementById("f-cultivar-sec").style.display=t==="cultivar"?"block":"none";document.getElementById("f-praga-sec").style.display=["praga","doenca","invasora"].includes(t)?"block":"none";document.getElementById("f-stand-sec").style.display=t==="stand"?"block":"none";document.getElementById("f-prod-sec").style.display=t==="producao"?"block":"none";document.getElementById("f-adub-sec").style.display=t==="adubacao"?"block":"none";}
+function handleFotos(e){[...e.target.files].forEach(f=>{const r=new FileReader();r.onload=ev=>{fotos.push({name:f.name,data:ev.target.result});const prev=document.getElementById("foto-preview"),add=prev.querySelector(".foto-add"),img=document.createElement("img");img.className="foto-thumb";img.src=ev.target.result;prev.insertBefore(img,add);};r.readAsDataURL(f);});}
+function savePonto(){const tipo=document.getElementById("m-tipo").value,titulo=document.getElementById("m-titulo").value.trim()||"Ponto "+(pontos.length+1),obs=document.getElementById("m-obs").value.trim(),el=startTime?Date.now()-startTime:0;const p={id:Date.now(),tipo,titulo,obs,pos:{...simPos},time:pad(Math.floor(el/60000))+":"+pad(Math.floor((el%60000)/1000)),dist:totalDist.toFixed(2),fotos:[...fotos]};if(tipo==="cultivar")p.cultivar={a:{nome:g("c-a-nome"),stand:g("c-a-stand"),alt:g("c-a-alt"),nota:g("c-a-nota"),ndvi:g("c-a-ndvi")},b:{nome:g("c-b-nome"),stand:g("c-b-stand"),alt:g("c-b-alt"),nota:g("c-b-nota"),ndvi:g("c-b-ndvi")},diff:g("c-diff")};if(["praga","doenca","invasora"].includes(tipo))p.praga={especie:g("p-especie"),nivel:g("p-nivel"),perc:g("p-perc"),ind:g("p-ind"),rec:g("p-rec")};if(tipo==="stand")p.stand={plantas:g("s-plantas"),falhas:g("s-falhas"),esperado:g("s-esperado"),sit:g("s-sit")};if(tipo==="producao")p.prod={vag:g("pr-vag"),grao:g("pr-grao"),massa:g("pr-massa"),sc:g("pr-sc")};if(tipo==="adubacao")p.adub={sintoma:g("ad-sintoma"),nutri:g("ad-nutri"),int:g("ad-int"),perc:g("ad-perc")};pontos.push(p);renderPontos();drawMap();document.getElementById("vis-badge").textContent=pontos.length+" pt"+(pontos.length!==1?"s":"");closeModal();}
+const TI={observacao:"🔍",cultivar:"🌱",praga:"🐛",doenca:"🍂",invasora:"🌿",solo:"🟫",agua:"💧",stand:"📏",producao:"📊",adubacao:"🧪",outro:"📋"};
+const TL={observacao:"Observação",cultivar:"Cultivar",praga:"Praga",doenca:"Doença",invasora:"Invasora",solo:"Solo",agua:"Hídrico",stand:"Stand",producao:"Produção",adubacao:"Adubação",outro:"Outro"};
+function renderPontos(){const list=document.getElementById("pontos-list");if(!pontos.length){list.innerHTML='<div style="padding:28px 16px;text-align:center;color:var(--text-faint);font-size:13px;font-weight:500;">Inicie e marque pontos durante a vistoria</div>';return;}list.innerHTML=pontos.map((p,i)=>{let d=`${TL[p.tipo]} · ${p.time} · ${p.dist} km`;if(p.obs)d+=` · ${p.obs.slice(0,50)}${p.obs.length>50?"...":""}`;if(p.cultivar)d+=`<br>${p.cultivar.a.nome||"A"}: ${p.cultivar.a.stand||"?"}pl/m ${p.cultivar.a.alt||"?"}cm nota${p.cultivar.a.nota||"?"} | ${p.cultivar.b.nome||"B"}: ${p.cultivar.b.stand||"?"}pl/m ${p.cultivar.b.alt||"?"}cm nota${p.cultivar.b.nota||"?"}`;if(p.praga)d+=`<br>${p.praga.especie||"—"} · ${p.praga.nivel} · ${p.praga.perc||"?"}% área`;if(p.stand)d+=`<br>Stand: ${p.stand.plantas||"?"}pl/m · Falhas: ${p.stand.falhas||"?"}%`;if(p.prod)d+=`<br>Est: ${p.prod.sc||"?"}sc/ha`;if(p.adub)d+=`<br>${p.adub.sintoma||""} (${p.adub.nutri||"?"})`;const ff=p.fotos&&p.fotos.length?'<div class="pt-fotos">'+p.fotos.map(f=>`<img src="${f.data}" alt="">`).join("")+"</div>":"";return`<div class="pt-item"><div class="pt-dot" style="background:${ptColor(p.tipo)}">${i+1}</div><div class="pt-body"><div class="pt-tit">${TI[p.tipo]} ${p.titulo}</div><div class="pt-det">${d}</div>${ff}</div><span class="pt-del" onclick="delPonto(${p.id})"><i class="ti ti-trash"></i></span></div>`;}).join("");}
+function delPonto(id){if(!confirm("Remover ponto?"))return;pontos=pontos.filter(p=>p.id!==id);renderPontos();drawMap();document.getElementById("vis-badge").textContent=pontos.length+" pt"+(pontos.length!==1?"s":"");}
+function buildReport(){const a=currentArea||{},elapsed=pausedMs||(startTime?Date.now()-startTime:0),m=Math.floor(elapsed/60000),s=Math.floor((elapsed%60000)/1000),vel=totalDist>0&&elapsed>0?(totalDist/(elapsed/3600000)).toFixed(1):"—";let h=`<div class="rep-hero"><div class="rep-hero-t">${a.nome||"Vistoria"}</div><div class="rep-hero-s">${[a.cultura,a.cultivar,a.ha?a.ha+" ha":""].filter(Boolean).join(" · ")} · ${new Date().toLocaleDateString("pt-BR")}</div></div>`;h+=`<div class="rep-block"><h4>Área</h4>${RR("Fazenda",a.fazenda||"—")}${RR("Município",a.municipio||"—")}${RR("Safra",a.safra||"—")}${RR("Cultura",a.cultura||"—")}${RR("Cultivar",a.cultivar||"—")}${RR("Área",a.ha?a.ha+" ha":"—")}${RR("Estádio",a.estadio||"—")}${a.pop?RR("Espaçamento",a.pop):""}${a.semeadura?RR("Semeadura",fmtD(a.semeadura)):""}${a.objetivos&&a.objetivos.length?RR("Objetivos",a.objetivos.join(", ")):""}${a.obs?RR("Obs. iniciais",a.obs):""}</div>`;h+=`<div class="rep-block"><h4>Vistoria</h4>${RR("Data",new Date().toLocaleDateString("pt-BR"))}${RR("Início",startTime?new Date(startTime).toLocaleTimeString("pt-BR"):"—")}${RR("Duração",m+"min "+s+"s")}${RR("Distância",totalDist.toFixed(2)+" km")}${RR("Vel. média",vel+" km/h")}${RR("Pontos",pontos.length)}${RR("GPS",useGPS?"Real":"Simulação")}</div>`;h+='<div class="rep-block"><h4>Pontos</h4>';if(!pontos.length)h+='<p style="font-size:13px;color:var(--text-muted);padding:8px 0">Nenhum ponto marcado.</p>';else pontos.forEach((p,i)=>{let d=`Tipo: ${TL[p.tipo]} · Tempo: ${p.time} · Dist: ${p.dist}km${p.obs?"<br>Obs: "+p.obs:""}`;if(p.cultivar){const c=p.cultivar;d+=`<br><b>${c.a.nome||"A"}</b>: stand ${c.a.stand||"?"}pl/m, alt ${c.a.alt||"?"}cm, nota ${c.a.nota||"?"}/5, NDVI ${c.a.ndvi||"?"}<br><b>${c.b.nome||"B"}</b>: stand ${c.b.stand||"?"}pl/m, alt ${c.b.alt||"?"}cm, nota ${c.b.nota||"?"}/5, NDVI ${c.b.ndvi||"?"}${c.diff?"<br>Dif: "+c.diff:""}`;}if(p.praga)d+=`<br>${p.praga.especie||"—"} · ${p.praga.nivel} · ${p.praga.perc||"?"}% área · ${p.praga.ind||"?"}ind./m² · ${p.praga.rec}`;if(p.stand)d+=`<br>Stand: ${p.stand.plantas||"?"}pl/m · Falhas: ${p.stand.falhas||"?"}% · ${p.stand.sit}`;if(p.prod)d+=`<br>Vagens/pl: ${p.prod.vag||"?"} · Grãos: ${p.prod.grao||"?"} · Est: ${p.prod.sc||"?"}sc/ha`;if(p.adub)d+=`<br>${p.adub.sintoma||"?"} (${p.adub.nutri||"?"}) · Int: ${p.adub.int||"?"}/5 · ${p.adub.perc||"?"}% plantas`;h+=`<div class="rep-pt"><div class="rep-pt-t">${i+1}. ${TI[p.tipo]} ${p.titulo}</div><div class="rep-pt-d">${d}</div>${p.fotos&&p.fotos.length?'<div class="rep-pt-f">'+p.fotos.map(f=>`<img src="${f.data}">`).join("")+"</div>":""}</div>`;});h+="</div>";document.getElementById("report-content").innerHTML=h;}
+function RR(l,v){return`<div class="rep-row"><span class="rep-lbl">${l}</span><span class="rep-val">${v}</span></div>`;}
+function fmtD(s){if(!s)return"—";const[y,m,d]=s.split("-");return`${d}/${m}/${y}`;}
+function exportKML(){const a=currentArea||{nome:"Vistoria"},now=new Date().toISOString();const toLng=x=>(-53.5+x*2).toFixed(6),toLat=y=>(-28.5+y*1.5).toFixed(6);const coords=path.map(p=>`${toLng(p.x)},${toLat(p.y)},0`).join("\n");const pmks=pontos.map((p,i)=>`<Placemark><name>${i+1}. ${p.titulo}</name><description><![CDATA[${TL[p.tipo]}${p.obs?" — "+p.obs:""} | Tempo: ${p.time} | Dist: ${p.dist}km]]></description><Point><coordinates>${toLng(p.pos.x)},${toLat(p.pos.y)},0</coordinates></Point></Placemark>`).join("\n");const kml=`<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Vistoria: ${a.nome} — ${now.slice(0,10)}</name><description><![CDATA[Safra: ${a.safra||"—"} | Cultura: ${a.cultura||"—"} | ${a.ha||"?"}ha | ${totalDist.toFixed(2)}km | ${pontos.length}pts]]></description><Style id="rota"><LineStyle><color>ff6BC900</color><width>3</width></LineStyle></Style><Placemark><name>Rota</name><styleUrl>#rota</styleUrl><LineString><tessellate>1</tessellate><coordinates>${coords}</coordinates></LineString></Placemark>${pmks}</Document></kml>`;dl(kml,`vistoria_${slug(a.nome)}_${now.slice(0,10)}.kml`,"application/vnd.google-earth.kml+xml");}
+function exportTXT(){const a=currentArea||{},elapsed=pausedMs||(startTime?Date.now()-startTime:0),m=Math.floor(elapsed/60000),s=Math.floor((elapsed%60000)/1000);let t=`RELATÓRIO DE VISTORIA — CampoTrack Pro\n${new Date().toLocaleString("pt-BR")}\n${"═".repeat(46)}\nNome: ${a.nome||"—"} | Fazenda: ${a.fazenda||"—"} | ${a.municipio||"—"}\nSafra: ${a.safra||"—"} | Cultura: ${a.cultura||"—"} | Cultivar: ${a.cultivar||"—"}\nÁrea: ${a.ha||"?"}ha | Estádio: ${a.estadio||"—"}\nObjetivos: ${(a.objetivos||[]).join(", ")||"—"}\n\nVISTORIA: ${m}min${s}s | ${totalDist.toFixed(2)}km | ${pontos.length}pts\n\nPONTOS\n${"─".repeat(40)}\n`;pontos.forEach((p,i)=>{t+=`\n${i+1}. [${TL[p.tipo]}] ${p.titulo}\n   ${p.time} | ${p.dist}km\n`;if(p.obs)t+=`   Obs: ${p.obs}\n`;if(p.cultivar){const c=p.cultivar;t+=`   ${c.a.nome||"A"}: stand=${c.a.stand||"?"}pl/m alt=${c.a.alt||"?"}cm nota=${c.a.nota||"?"}/5 ndvi=${c.a.ndvi||"?"}\n   ${c.b.nome||"B"}: stand=${c.b.stand||"?"}pl/m alt=${c.b.alt||"?"}cm nota=${c.b.nota||"?"}/5 ndvi=${c.b.ndvi||"?"}\n${c.diff?"   Dif: "+c.diff+"\n":""}` ;}if(p.praga)t+=`   ${p.praga.especie||"—"} | ${p.praga.nivel} | ${p.praga.perc||"?"}%área | ${p.praga.ind||"?"}ind./m²\n   Rec: ${p.praga.rec}\n`;if(p.stand)t+=`   Stand: ${p.stand.plantas||"?"}pl/m | Falhas: ${p.stand.falhas||"?"}% | ${p.stand.sit}\n`;if(p.prod)t+=`   Vagens/pl: ${p.prod.vag||"?"} | Grãos/vag: ${p.prod.grao||"?"} | ${p.prod.sc||"?"}sc/ha\n`;if(p.adub)t+=`   ${p.adub.sintoma||"?"} (${p.adub.nutri||"?"}) | Int: ${p.adub.int||"?"}/5 | ${p.adub.perc||"?"}%plantas\n`;t+=`   Fotos: ${p.fotos?p.fotos.length:0}\n`;});t+=`\n${"═".repeat(46)}\nGerado por CampoTrack Pro`;dl(t,`relatorio_${slug(a.nome||"campo")}_${new Date().toISOString().slice(0,10)}.txt`,"text/plain;charset=utf-8");}
+function dl(content,filename,type){const b=new Blob([content],{type}),u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download=filename;a.click();URL.revokeObjectURL(u);}
+function slug(s){return(s||"campo").toLowerCase().replace(/\s+/g,"_").replace(/[^\w-]/g,"").slice(0,30);}
+function finalizarVistoria(){if(!confirm("Finalizar a vistoria?"))return;clearInterval(timerInt);clearInterval(simInt);if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;}tracking=false;if(startTime){pausedMs=Date.now()-startTime;stats.vis++;stats.km=parseFloat((stats.km+totalDist).toFixed(2));localStorage.setItem("ct_stats",JSON.stringify(stats));}buildReport();showScreen("scr-report");}
+function confirmarSaida(){if((tracking||pontos.length>0)&&!confirm("Sair da vistoria em andamento?"))return;clearInterval(timerInt);clearInterval(simInt);if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;}tracking=false;showScreen("scr-areas");}
+window.addEventListener("resize",()=>{if(document.getElementById("scr-vistoria").classList.contains("active"))resizeCanvas();});
+renderAreas();
+</script>
+</body>
+</html>
