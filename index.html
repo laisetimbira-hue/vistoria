@@ -379,7 +379,10 @@ let areas=JSON.parse(localStorage.getItem("ct_areas")||"[]");
 let stats=JSON.parse(localStorage.getItem("ct_stats")||'{"vis":0,"km":0}');
 let currentArea=null,tracking=false,paused=false,startTime=null,pausedMs=0;
 let timerInt=null,simInt=null,watchId=null,useGPS=false,lastGPSPos=null;
-let path=[],pontos=[],fotos=[],simPos={x:.45,y:.45},simAngle=Math.random()*Math.PI*2,totalDist=0;
+// path armazena {lat,lng} reais (GPS) ou {x,y} relativo (simulação)
+// gpsPath armazena sempre {lat,lng} reais para exportação KML correta
+let path=[],gpsPath=[],pontos=[],fotos=[],simPos={x:.45,y:.45},simAngle=Math.random()*Math.PI*2,totalDist=0;
+let mapBounds=null; // {minLat,maxLat,minLng,maxLng} para projetar GPS no canvas
 function showScreen(id){document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));document.getElementById(id).classList.add("active");if(id==="scr-areas")renderAreas();if(id==="scr-vistoria")setTimeout(resizeCanvas,60);if(id==="scr-report"){buildReport();document.getElementById("rep-date").textContent=new Date().toLocaleDateString("pt-BR");}}
 function toggleChip(el){el.classList.toggle("sel");}
 function getChips(){return[...document.querySelectorAll("#obj-chips .chip.sel")].map(c=>c.textContent);}
@@ -390,14 +393,95 @@ function g(id){const e=document.getElementById(id);return e?e.value.trim():"";}
 function salvarArea(){const nome=g("f-nome");if(!nome){alert("Informe o nome da área.");return;}const a={nome,fazenda:g("f-fazenda"),municipio:g("f-municipio"),safra:g("f-safra"),cultura:g("f-cultura"),cultivar:g("f-cultivar"),ha:g("f-ha"),estadio:g("f-estadio"),pop:g("f-pop"),semeadura:g("f-semeadura"),objetivos:getChips(),obs:g("f-obs"),data:new Date().toLocaleDateString("pt-BR"),id:Date.now()};areas.push(a);localStorage.setItem("ct_areas",JSON.stringify(areas));["f-nome","f-fazenda","f-municipio","f-cultivar","f-ha","f-pop","f-semeadura","f-obs"].forEach(id=>document.getElementById(id).value="");document.getElementById("f-cultura").value="";document.getElementById("f-estadio").value="";document.querySelectorAll("#obj-chips .chip.sel").forEach(c=>c.classList.remove("sel"));currentArea=a;resetVistoria();showScreen("scr-vistoria");}
 function abrirVistoria(i){currentArea=areas[i];resetVistoria();showScreen("scr-vistoria");}
 function limparAreas(){if(!confirm("Apagar todas as áreas?"))return;areas=[];localStorage.setItem("ct_areas",JSON.stringify(areas));renderAreas();}
-function resetVistoria(){tracking=false;paused=false;clearInterval(timerInt);clearInterval(simInt);if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;}path=[];pontos=[];fotos=[];totalDist=0;startTime=null;pausedMs=0;lastGPSPos=null;simPos={x:.25+Math.random()*.5,y:.25+Math.random()*.5};simAngle=Math.random()*Math.PI*2;document.getElementById("sv-dist").textContent="0.00";document.getElementById("sv-time").textContent="00:00";["sdot","sdot2"].forEach(id=>document.getElementById(id).className="sdot idle");document.getElementById("stext").textContent="Pronto para iniciar";document.getElementById("track-icon").className="ti ti-player-play";document.getElementById("track-lbl").textContent="Iniciar";document.getElementById("btn-track").className="btn btn-accent";document.getElementById("btn-ponto").disabled=true;document.getElementById("vis-title").textContent=currentArea?currentArea.nome:"Vistoria";document.getElementById("vis-badge").textContent="0 pts";document.getElementById("gps-txt").textContent="GPS";renderPontos();setTimeout(()=>{resizeCanvas();drawMap();},80);}
+function resetVistoria(){tracking=false;paused=false;clearInterval(timerInt);clearInterval(simInt);if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;}path=[];gpsPath=[];pontos=[];fotos=[];totalDist=0;startTime=null;pausedMs=0;lastGPSPos=null;mapBounds=null;simPos={x:.25+Math.random()*.5,y:.25+Math.random()*.5};simAngle=Math.random()*Math.PI*2;document.getElementById("sv-dist").textContent="0.00";document.getElementById("sv-time").textContent="00:00";["sdot","sdot2"].forEach(id=>document.getElementById(id).className="sdot idle");document.getElementById("stext").textContent="Pronto para iniciar";document.getElementById("track-icon").className="ti ti-player-play";document.getElementById("track-lbl").textContent="Iniciar";document.getElementById("btn-track").className="btn btn-accent";document.getElementById("btn-ponto").disabled=true;document.getElementById("vis-title").textContent=currentArea?currentArea.nome:"Vistoria";document.getElementById("vis-badge").textContent="0 pts";document.getElementById("gps-txt").textContent="GPS";renderPontos();setTimeout(()=>{resizeCanvas();drawMap();},80);}
 const canvas=document.getElementById("map-canvas"),ctx=canvas.getContext("2d");
 function resizeCanvas(){const w=document.getElementById("map-wrap");canvas.width=w.clientWidth;canvas.height=280;drawMap();}
-function drawMap(){const W=canvas.width,H=canvas.height;ctx.clearRect(0,0,W,H);ctx.fillStyle="#1a2e1a";ctx.fillRect(0,0,W,H);ctx.strokeStyle="rgba(255,255,255,0.025)";ctx.lineWidth=1;for(let y=0;y<H;y+=16){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}const cx=W*.5,cy=H*.48,rx=W*.43,ry=H*.41;ctx.beginPath();ctx.ellipse(cx,cy,rx,ry,-.15,0,Math.PI*2);ctx.fillStyle="rgba(0,201,107,0.07)";ctx.fill();ctx.strokeStyle="rgba(0,201,107,0.45)";ctx.lineWidth=1.5;ctx.setLineDash([8,5]);ctx.stroke();ctx.setLineDash([]);if(path.length>1){ctx.beginPath();ctx.strokeStyle="rgba(0,201,107,0.2)";ctx.lineWidth=10;ctx.lineJoin="round";ctx.lineCap="round";path.forEach((p,i)=>i===0?ctx.moveTo(p.x*W,p.y*H):ctx.lineTo(p.x*W,p.y*H));ctx.stroke();ctx.beginPath();ctx.strokeStyle="#00C96B";ctx.lineWidth=2.5;path.forEach((p,i)=>i===0?ctx.moveTo(p.x*W,p.y*H):ctx.lineTo(p.x*W,p.y*H));ctx.stroke();}pontos.forEach((p,i)=>{const px=p.pos.x*W,py=p.pos.y*H;ctx.beginPath();ctx.arc(px,py,13,0,Math.PI*2);ctx.fillStyle=ptColor(p.tipo);ctx.fill();ctx.strokeStyle="#fff";ctx.lineWidth=2;ctx.stroke();ctx.fillStyle="#fff";ctx.font="bold 11px Figtree,sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(i+1,px,py);});if(path.length>0){const l=path[path.length-1],lx=l.x*W,ly=l.y*H;ctx.beginPath();ctx.arc(lx,ly,18,0,Math.PI*2);ctx.strokeStyle="rgba(0,201,107,0.25)";ctx.lineWidth=6;ctx.stroke();ctx.beginPath();ctx.arc(lx,ly,8,0,Math.PI*2);ctx.fillStyle="#fff";ctx.fill();ctx.beginPath();ctx.arc(lx,ly,5.5,0,Math.PI*2);ctx.fillStyle="#00C96B";ctx.fill();}}
+
+// Projeta lat/lng para x,y no canvas com base nos bounds acumulados
+function latlngToXY(lat,lng,W,H){
+  if(!mapBounds)return{x:W*.5,y:H*.5};
+  const pad=0.05;
+  const dLat=mapBounds.maxLat-mapBounds.minLat||0.001;
+  const dLng=mapBounds.maxLng-mapBounds.minLng||0.001;
+  // margem de 10% nas bordas
+  const x=(lng-mapBounds.minLng)/dLng*(W*(1-pad*2))+W*pad;
+  const y=(mapBounds.maxLat-lat)/dLat*(H*(1-pad*2))+H*pad;
+  return{x,y};
+}
+
+function drawMap(){
+  const W=canvas.width,H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle="#1a2e1a";ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle="rgba(255,255,255,0.025)";ctx.lineWidth=1;
+  for(let y=0;y<H;y+=16){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+
+  // talhão de fundo (elipse decorativa)
+  const cx=W*.5,cy=H*.48,rx=W*.43,ry=H*.41;
+  ctx.beginPath();ctx.ellipse(cx,cy,rx,ry,-.15,0,Math.PI*2);
+  ctx.fillStyle="rgba(0,201,107,0.07)";ctx.fill();
+  ctx.strokeStyle="rgba(0,201,107,0.45)";ctx.lineWidth=1.5;ctx.setLineDash([8,5]);ctx.stroke();ctx.setLineDash([]);
+
+  // rota
+  const pts = useGPS && gpsPath.length>1
+    ? gpsPath.map(p=>latlngToXY(p.lat,p.lng,W,H))
+    : path.map(p=>({x:p.x*W,y:p.y*H}));
+
+  if(pts.length>1){
+    ctx.beginPath();ctx.strokeStyle="rgba(0,201,107,0.2)";ctx.lineWidth=10;ctx.lineJoin="round";ctx.lineCap="round";
+    pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));ctx.stroke();
+    ctx.beginPath();ctx.strokeStyle="#00C96B";ctx.lineWidth=2.5;
+    pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));ctx.stroke();
+  }
+
+  // pontos
+  pontos.forEach((p,i)=>{
+    let px_,py_;
+    if(useGPS && p.gps){const r=latlngToXY(p.gps.lat,p.gps.lng,W,H);px_=r.x;py_=r.y;}
+    else{px_=p.pos.x*W;py_=p.pos.y*H;}
+    ctx.beginPath();ctx.arc(px_,py_,13,0,Math.PI*2);ctx.fillStyle=ptColor(p.tipo);ctx.fill();
+    ctx.strokeStyle="#fff";ctx.lineWidth=2;ctx.stroke();
+    ctx.fillStyle="#fff";ctx.font="bold 11px Figtree,sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(i+1,px_,py_);
+  });
+
+  // posição atual
+  const last = useGPS && gpsPath.length>0
+    ? latlngToXY(gpsPath[gpsPath.length-1].lat,gpsPath[gpsPath.length-1].lng,W,H)
+    : (path.length>0?{x:path[path.length-1].x*W,y:path[path.length-1].y*H}:null);
+  if(last){
+    ctx.beginPath();ctx.arc(last.x,last.y,18,0,Math.PI*2);ctx.strokeStyle="rgba(0,201,107,0.25)";ctx.lineWidth=6;ctx.stroke();
+    ctx.beginPath();ctx.arc(last.x,last.y,8,0,Math.PI*2);ctx.fillStyle="#fff";ctx.fill();
+    ctx.beginPath();ctx.arc(last.x,last.y,5.5,0,Math.PI*2);ctx.fillStyle="#00C96B";ctx.fill();
+  }
+}
 function ptColor(t){return{observacao:"#0A84FF",cultivar:"#00C96B",praga:"#FF6B35",doenca:"#FF9F0A",invasora:"#30D158",solo:"#8E8E93",agua:"#5AC8FA",stand:"#64D2FF",producao:"#BF5AF2",adubacao:"#FFD60A",outro:"#636366"}[t]||"#636366";}
 function pad(n){return n.toString().padStart(2,"0");}
 function toggleTracking(){!tracking?startTracking():pauseTracking();}
-function startTracking(){tracking=true;paused=false;startTime=Date.now()-pausedMs;document.getElementById("btn-track").className="btn btn-red";document.getElementById("track-icon").className="ti ti-player-pause";document.getElementById("track-lbl").textContent="Pausar";["sdot","sdot2"].forEach(id=>document.getElementById(id).className="sdot rec");document.getElementById("stext").textContent="Rastreando...";document.getElementById("btn-ponto").disabled=false;if(path.length===0)path.push({...simPos});timerInt=setInterval(()=>{const el=Date.now()-startTime;document.getElementById("sv-time").textContent=pad(Math.floor(el/60000))+":"+pad(Math.floor((el%60000)/1000));},1000);if(navigator.geolocation){watchId=navigator.geolocation.watchPosition(pos=>{useGPS=true;const{latitude:lat,longitude:lng}=pos.coords;const nx=Math.max(.05,Math.min(.95,(lng+54)/2)),ny=Math.max(.05,Math.min(.95,(-26-lat)/3));if(lastGPSPos){totalDist+=geoD(lastGPSPos.lat,lastGPSPos.lng,lat,lng)/1000;document.getElementById("sv-dist").textContent=totalDist.toFixed(2);}lastGPSPos={lat,lng};simPos={x:nx,y:ny};path.push({...simPos});if(path.length>1000)path.shift();document.getElementById("gps-txt").textContent="±"+Math.round(pos.coords.accuracy||0)+"m";drawMap();},()=>{useGPS=false;startSim();},{enableHighAccuracy:true,maximumAge:2000,timeout:5000});setTimeout(()=>{if(!useGPS)startSim();},5000);}else startSim();}
+function startTracking(){tracking=true;paused=false;startTime=Date.now()-pausedMs;document.getElementById("btn-track").className="btn btn-red";document.getElementById("track-icon").className="ti ti-player-pause";document.getElementById("track-lbl").textContent="Pausar";["sdot","sdot2"].forEach(id=>document.getElementById(id).className="sdot rec");document.getElementById("stext").textContent="Rastreando...";document.getElementById("btn-ponto").disabled=false;if(!useGPS && path.length===0)path.push({...simPos});timerInt=setInterval(()=>{const el=Date.now()-startTime;document.getElementById("sv-time").textContent=pad(Math.floor(el/60000))+":"+pad(Math.floor((el%60000)/1000));},1000);
+if(navigator.geolocation){
+  watchId=navigator.geolocation.watchPosition(pos=>{
+    useGPS=true;
+    const lat=pos.coords.latitude,lng=pos.coords.longitude;
+    // atualiza bounds para projeção no canvas
+    if(!mapBounds){mapBounds={minLat:lat,maxLat:lat,minLng:lng,maxLng:lng};}
+    else{mapBounds.minLat=Math.min(mapBounds.minLat,lat);mapBounds.maxLat=Math.max(mapBounds.maxLat,lat);mapBounds.minLng=Math.min(mapBounds.minLng,lng);mapBounds.maxLng=Math.max(mapBounds.maxLng,lng);}
+    // expande bounds 20% para não colar na borda
+    const dLat=(mapBounds.maxLat-mapBounds.minLat)*0.1||0.0005;
+    const dLng=(mapBounds.maxLng-mapBounds.minLng)*0.1||0.0005;
+    const viewBounds={minLat:mapBounds.minLat-dLat,maxLat:mapBounds.maxLat+dLat,minLng:mapBounds.minLng-dLng,maxLng:mapBounds.maxLng+dLng};
+    // guarda rota GPS real
+    gpsPath.push({lat,lng});if(gpsPath.length>2000)gpsPath.shift();
+    // calcula distância
+    if(lastGPSPos){totalDist+=geoD(lastGPSPos.lat,lastGPSPos.lng,lat,lng)/1000;document.getElementById("sv-dist").textContent=totalDist.toFixed(2);}
+    lastGPSPos={lat,lng};
+    // simPos apenas para posição relativa no canvas simulado (não usado no GPS)
+    simPos={x:.5,y:.5};
+    document.getElementById("gps-txt").textContent="±"+Math.round(pos.coords.accuracy||0)+"m";
+    drawMap();
+  },()=>{useGPS=false;startSim();},{enableHighAccuracy:true,maximumAge:2000,timeout:8000});
+  setTimeout(()=>{if(!useGPS)startSim();},8000);
+}else startSim();
+}
 function startSim(){document.getElementById("gps-txt").textContent="Demo";simInt=setInterval(()=>{simAngle+=(Math.random()-.5)*.55;const sp=.007+Math.random()*.005;let nx=Math.max(.07,Math.min(.93,simPos.x+Math.cos(simAngle)*sp)),ny=Math.max(.07,Math.min(.93,simPos.y+Math.sin(simAngle)*sp));totalDist+=Math.sqrt(Math.pow((nx-simPos.x)*.1,2)+Math.pow((ny-simPos.y)*.09,2))*800;document.getElementById("sv-dist").textContent=totalDist.toFixed(2);simPos={x:nx,y:ny};path.push({...simPos});if(path.length>1000)path.shift();drawMap();},500);}
 function pauseTracking(){tracking=false;paused=true;pausedMs=Date.now()-startTime;clearInterval(timerInt);clearInterval(simInt);if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;}document.getElementById("btn-track").className="btn btn-accent";document.getElementById("track-icon").className="ti ti-player-play";document.getElementById("track-lbl").textContent="Retomar";["sdot","sdot2"].forEach(id=>document.getElementById(id).className="sdot paused");document.getElementById("stext").textContent=`Pausado · ${pontos.length} ponto(s) · ${totalDist.toFixed(2)} km`;}
 function geoD(a,b,c,d){const R=6371000,p1=a*Math.PI/180,p2=c*Math.PI/180,dp=(c-a)*Math.PI/180,dl=(d-b)*Math.PI/180,x=Math.sin(dp/2)**2+Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)**2;return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
@@ -406,7 +490,9 @@ function closeModal(){document.getElementById("modal-ov").classList.remove("show
 function handleOvClick(e){if(e.target===document.getElementById("modal-ov"))closeModal();}
 function toggleMFields(){const t=document.getElementById("m-tipo").value;document.getElementById("f-cultivar-sec").style.display=t==="cultivar"?"block":"none";document.getElementById("f-praga-sec").style.display=["praga","doenca","invasora"].includes(t)?"block":"none";document.getElementById("f-stand-sec").style.display=t==="stand"?"block":"none";document.getElementById("f-prod-sec").style.display=t==="producao"?"block":"none";document.getElementById("f-adub-sec").style.display=t==="adubacao"?"block":"none";}
 function handleFotos(e){[...e.target.files].forEach(f=>{const r=new FileReader();r.onload=ev=>{fotos.push({name:f.name,data:ev.target.result});const prev=document.getElementById("foto-preview"),add=prev.querySelector(".foto-add"),img=document.createElement("img");img.className="foto-thumb";img.src=ev.target.result;prev.insertBefore(img,add);};r.readAsDataURL(f);});}
-function savePonto(){const tipo=document.getElementById("m-tipo").value,titulo=document.getElementById("m-titulo").value.trim()||"Ponto "+(pontos.length+1),obs=document.getElementById("m-obs").value.trim(),el=startTime?Date.now()-startTime:0;const p={id:Date.now(),tipo,titulo,obs,pos:{...simPos},time:pad(Math.floor(el/60000))+":"+pad(Math.floor((el%60000)/1000)),dist:totalDist.toFixed(2),fotos:[...fotos]};if(tipo==="cultivar")p.cultivar={a:{nome:g("c-a-nome"),stand:g("c-a-stand"),alt:g("c-a-alt"),nota:g("c-a-nota"),ndvi:g("c-a-ndvi")},b:{nome:g("c-b-nome"),stand:g("c-b-stand"),alt:g("c-b-alt"),nota:g("c-b-nota"),ndvi:g("c-b-ndvi")},diff:g("c-diff")};if(["praga","doenca","invasora"].includes(tipo))p.praga={especie:g("p-especie"),nivel:g("p-nivel"),perc:g("p-perc"),ind:g("p-ind"),rec:g("p-rec")};if(tipo==="stand")p.stand={plantas:g("s-plantas"),falhas:g("s-falhas"),esperado:g("s-esperado"),sit:g("s-sit")};if(tipo==="producao")p.prod={vag:g("pr-vag"),grao:g("pr-grao"),massa:g("pr-massa"),sc:g("pr-sc")};if(tipo==="adubacao")p.adub={sintoma:g("ad-sintoma"),nutri:g("ad-nutri"),int:g("ad-int"),perc:g("ad-perc")};pontos.push(p);renderPontos();drawMap();document.getElementById("vis-badge").textContent=pontos.length+" pt"+(pontos.length!==1?"s":"");closeModal();}
+function savePonto(){const tipo=document.getElementById("m-tipo").value,titulo=document.getElementById("m-titulo").value.trim()||"Ponto "+(pontos.length+1),obs=document.getElementById("m-obs").value.trim(),el=startTime?Date.now()-startTime:0;
+  // guarda tanto pos relativa (canvas) quanto gps real
+  const p={id:Date.now(),tipo,titulo,obs,pos:{...simPos},gps:lastGPSPos?{...lastGPSPos}:null,time:pad(Math.floor(el/60000))+":"+pad(Math.floor((el%60000)/1000)),dist:totalDist.toFixed(2),fotos:[...fotos]};if(tipo==="cultivar")p.cultivar={a:{nome:g("c-a-nome"),stand:g("c-a-stand"),alt:g("c-a-alt"),nota:g("c-a-nota"),ndvi:g("c-a-ndvi")},b:{nome:g("c-b-nome"),stand:g("c-b-stand"),alt:g("c-b-alt"),nota:g("c-b-nota"),ndvi:g("c-b-ndvi")},diff:g("c-diff")};if(["praga","doenca","invasora"].includes(tipo))p.praga={especie:g("p-especie"),nivel:g("p-nivel"),perc:g("p-perc"),ind:g("p-ind"),rec:g("p-rec")};if(tipo==="stand")p.stand={plantas:g("s-plantas"),falhas:g("s-falhas"),esperado:g("s-esperado"),sit:g("s-sit")};if(tipo==="producao")p.prod={vag:g("pr-vag"),grao:g("pr-grao"),massa:g("pr-massa"),sc:g("pr-sc")};if(tipo==="adubacao")p.adub={sintoma:g("ad-sintoma"),nutri:g("ad-nutri"),int:g("ad-int"),perc:g("ad-perc")};pontos.push(p);renderPontos();drawMap();document.getElementById("vis-badge").textContent=pontos.length+" pt"+(pontos.length!==1?"s":"");closeModal();}
 const TI={observacao:"🔍",cultivar:"🌱",praga:"🐛",doenca:"🍂",invasora:"🌿",solo:"🟫",agua:"💧",stand:"📏",producao:"📊",adubacao:"🧪",outro:"📋"};
 const TL={observacao:"Observação",cultivar:"Cultivar",praga:"Praga",doenca:"Doença",invasora:"Invasora",solo:"Solo",agua:"Hídrico",stand:"Stand",producao:"Produção",adubacao:"Adubação",outro:"Outro"};
 function renderPontos(){const list=document.getElementById("pontos-list");if(!pontos.length){list.innerHTML='<div style="padding:28px 16px;text-align:center;color:var(--text-faint);font-size:13px;font-weight:500;">Inicie e marque pontos durante a vistoria</div>';return;}list.innerHTML=pontos.map((p,i)=>{let d=`${TL[p.tipo]} · ${p.time} · ${p.dist} km`;if(p.obs)d+=` · ${p.obs.slice(0,50)}${p.obs.length>50?"...":""}`;if(p.cultivar)d+=`<br>${p.cultivar.a.nome||"A"}: ${p.cultivar.a.stand||"?"}pl/m ${p.cultivar.a.alt||"?"}cm nota${p.cultivar.a.nota||"?"} | ${p.cultivar.b.nome||"B"}: ${p.cultivar.b.stand||"?"}pl/m ${p.cultivar.b.alt||"?"}cm nota${p.cultivar.b.nota||"?"}`;if(p.praga)d+=`<br>${p.praga.especie||"—"} · ${p.praga.nivel} · ${p.praga.perc||"?"}% área`;if(p.stand)d+=`<br>Stand: ${p.stand.plantas||"?"}pl/m · Falhas: ${p.stand.falhas||"?"}%`;if(p.prod)d+=`<br>Est: ${p.prod.sc||"?"}sc/ha`;if(p.adub)d+=`<br>${p.adub.sintoma||""} (${p.adub.nutri||"?"})`;const ff=p.fotos&&p.fotos.length?'<div class="pt-fotos">'+p.fotos.map(f=>`<img src="${f.data}" alt="">`).join("")+"</div>":"";return`<div class="pt-item"><div class="pt-dot" style="background:${ptColor(p.tipo)}">${i+1}</div><div class="pt-body"><div class="pt-tit">${TI[p.tipo]} ${p.titulo}</div><div class="pt-det">${d}</div>${ff}</div><span class="pt-del" onclick="delPonto(${p.id})"><i class="ti ti-trash"></i></span></div>`;}).join("");}
@@ -414,7 +500,26 @@ function delPonto(id){if(!confirm("Remover ponto?"))return;pontos=pontos.filter(
 function buildReport(){const a=currentArea||{},elapsed=pausedMs||(startTime?Date.now()-startTime:0),m=Math.floor(elapsed/60000),s=Math.floor((elapsed%60000)/1000),vel=totalDist>0&&elapsed>0?(totalDist/(elapsed/3600000)).toFixed(1):"—";let h=`<div class="rep-hero"><div class="rep-hero-t">${a.nome||"Vistoria"}</div><div class="rep-hero-s">${[a.cultura,a.cultivar,a.ha?a.ha+" ha":""].filter(Boolean).join(" · ")} · ${new Date().toLocaleDateString("pt-BR")}</div></div>`;h+=`<div class="rep-block"><h4>Área</h4>${RR("Fazenda",a.fazenda||"—")}${RR("Município",a.municipio||"—")}${RR("Safra",a.safra||"—")}${RR("Cultura",a.cultura||"—")}${RR("Cultivar",a.cultivar||"—")}${RR("Área",a.ha?a.ha+" ha":"—")}${RR("Estádio",a.estadio||"—")}${a.pop?RR("Espaçamento",a.pop):""}${a.semeadura?RR("Semeadura",fmtD(a.semeadura)):""}${a.objetivos&&a.objetivos.length?RR("Objetivos",a.objetivos.join(", ")):""}${a.obs?RR("Obs. iniciais",a.obs):""}</div>`;h+=`<div class="rep-block"><h4>Vistoria</h4>${RR("Data",new Date().toLocaleDateString("pt-BR"))}${RR("Início",startTime?new Date(startTime).toLocaleTimeString("pt-BR"):"—")}${RR("Duração",m+"min "+s+"s")}${RR("Distância",totalDist.toFixed(2)+" km")}${RR("Vel. média",vel+" km/h")}${RR("Pontos",pontos.length)}${RR("GPS",useGPS?"Real":"Simulação")}</div>`;h+='<div class="rep-block"><h4>Pontos</h4>';if(!pontos.length)h+='<p style="font-size:13px;color:var(--text-muted);padding:8px 0">Nenhum ponto marcado.</p>';else pontos.forEach((p,i)=>{let d=`Tipo: ${TL[p.tipo]} · Tempo: ${p.time} · Dist: ${p.dist}km${p.obs?"<br>Obs: "+p.obs:""}`;if(p.cultivar){const c=p.cultivar;d+=`<br><b>${c.a.nome||"A"}</b>: stand ${c.a.stand||"?"}pl/m, alt ${c.a.alt||"?"}cm, nota ${c.a.nota||"?"}/5, NDVI ${c.a.ndvi||"?"}<br><b>${c.b.nome||"B"}</b>: stand ${c.b.stand||"?"}pl/m, alt ${c.b.alt||"?"}cm, nota ${c.b.nota||"?"}/5, NDVI ${c.b.ndvi||"?"}${c.diff?"<br>Dif: "+c.diff:""}`;}if(p.praga)d+=`<br>${p.praga.especie||"—"} · ${p.praga.nivel} · ${p.praga.perc||"?"}% área · ${p.praga.ind||"?"}ind./m² · ${p.praga.rec}`;if(p.stand)d+=`<br>Stand: ${p.stand.plantas||"?"}pl/m · Falhas: ${p.stand.falhas||"?"}% · ${p.stand.sit}`;if(p.prod)d+=`<br>Vagens/pl: ${p.prod.vag||"?"} · Grãos: ${p.prod.grao||"?"} · Est: ${p.prod.sc||"?"}sc/ha`;if(p.adub)d+=`<br>${p.adub.sintoma||"?"} (${p.adub.nutri||"?"}) · Int: ${p.adub.int||"?"}/5 · ${p.adub.perc||"?"}% plantas`;h+=`<div class="rep-pt"><div class="rep-pt-t">${i+1}. ${TI[p.tipo]} ${p.titulo}</div><div class="rep-pt-d">${d}</div>${p.fotos&&p.fotos.length?'<div class="rep-pt-f">'+p.fotos.map(f=>`<img src="${f.data}">`).join("")+"</div>":""}</div>`;});h+="</div>";document.getElementById("report-content").innerHTML=h;}
 function RR(l,v){return`<div class="rep-row"><span class="rep-lbl">${l}</span><span class="rep-val">${v}</span></div>`;}
 function fmtD(s){if(!s)return"—";const[y,m,d]=s.split("-");return`${d}/${m}/${y}`;}
-function exportKML(){const a=currentArea||{nome:"Vistoria"},now=new Date().toISOString();const toLng=x=>(-53.5+x*2).toFixed(6),toLat=y=>(-28.5+y*1.5).toFixed(6);const coords=path.map(p=>`${toLng(p.x)},${toLat(p.y)},0`).join("\n");const pmks=pontos.map((p,i)=>`<Placemark><name>${i+1}. ${p.titulo}</name><description><![CDATA[${TL[p.tipo]}${p.obs?" — "+p.obs:""} | Tempo: ${p.time} | Dist: ${p.dist}km]]></description><Point><coordinates>${toLng(p.pos.x)},${toLat(p.pos.y)},0</coordinates></Point></Placemark>`).join("\n");const kml=`<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Vistoria: ${a.nome} — ${now.slice(0,10)}</name><description><![CDATA[Safra: ${a.safra||"—"} | Cultura: ${a.cultura||"—"} | ${a.ha||"?"}ha | ${totalDist.toFixed(2)}km | ${pontos.length}pts]]></description><Style id="rota"><LineStyle><color>ff6BC900</color><width>3</width></LineStyle></Style><Placemark><name>Rota</name><styleUrl>#rota</styleUrl><LineString><tessellate>1</tessellate><coordinates>${coords}</coordinates></LineString></Placemark>${pmks}</Document></kml>`;dl(kml,`vistoria_${slug(a.nome)}_${now.slice(0,10)}.kml`,"application/vnd.google-earth.kml+xml");}
+function exportKML(){
+  const a=currentArea||{nome:"Vistoria"},now=new Date().toISOString();
+  // usa coordenadas GPS reais se disponíveis, senão avisa que é simulação
+  const hasGPS = useGPS && gpsPath.length>0;
+  const coords = hasGPS
+    ? gpsPath.map(p=>`${p.lng.toFixed(7)},${p.lat.toFixed(7)},0`).join("\n")
+    : "// Sem GPS real — coordenadas não disponíveis";
+  const pmks=pontos.map((p,i)=>{
+    const hasGPSPt = p.gps && p.gps.lat;
+    const coord = hasGPSPt ? `${p.gps.lng.toFixed(7)},${p.gps.lat.toFixed(7)},0` : null;
+    if(!coord) return `<!-- Ponto ${i+1} sem GPS real -->`;
+    return `<Placemark><name>${i+1}. ${p.titulo}</name><description><![CDATA[${TL[p.tipo]}${p.obs?" — "+p.obs:""} | Tempo: ${p.time} | Dist: ${p.dist}km]]></description><Point><coordinates>${coord}</coordinates></Point></Placemark>`;
+  }).join("\n");
+  const rotaKml = hasGPS
+    ? `<Placemark><name>Rota</name><styleUrl>#rota</styleUrl><LineString><tessellate>1</tessellate><coordinates>${coords}</coordinates></LineString></Placemark>`
+    : `<!-- Rota sem GPS real -->`;
+  const kml=`<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Vistoria: ${a.nome} — ${now.slice(0,10)}</name><description><![CDATA[Safra: ${a.safra||"—"} | Cultura: ${a.cultura||"—"} | ${a.ha||"?"}ha | ${totalDist.toFixed(2)}km | ${pontos.length}pts${!hasGPS?" | ⚠️ GPS não usado":""} ]]></description><Style id="rota"><LineStyle><color>ff6BC900</color><width>3</width></LineStyle></Style>${rotaKml}\n${pmks}</Document></kml>`;
+  if(!hasGPS){alert("⚠️ GPS não estava ativo durante esta vistoria.\nO KML não terá coordenadas reais.\n\nPara ter o rastreamento correto, abra o app via HTTPS (GitHub Pages) e permita o GPS no navegador.");}
+  dl(kml,`vistoria_${slug(a.nome)}_${now.slice(0,10)}.kml`,"application/vnd.google-earth.kml+xml");
+}
 function exportTXT(){const a=currentArea||{},elapsed=pausedMs||(startTime?Date.now()-startTime:0),m=Math.floor(elapsed/60000),s=Math.floor((elapsed%60000)/1000);let t=`RELATÓRIO DE VISTORIA — CampoTrack Pro\n${new Date().toLocaleString("pt-BR")}\n${"═".repeat(46)}\nNome: ${a.nome||"—"} | Fazenda: ${a.fazenda||"—"} | ${a.municipio||"—"}\nSafra: ${a.safra||"—"} | Cultura: ${a.cultura||"—"} | Cultivar: ${a.cultivar||"—"}\nÁrea: ${a.ha||"?"}ha | Estádio: ${a.estadio||"—"}\nObjetivos: ${(a.objetivos||[]).join(", ")||"—"}\n\nVISTORIA: ${m}min${s}s | ${totalDist.toFixed(2)}km | ${pontos.length}pts\n\nPONTOS\n${"─".repeat(40)}\n`;pontos.forEach((p,i)=>{t+=`\n${i+1}. [${TL[p.tipo]}] ${p.titulo}\n   ${p.time} | ${p.dist}km\n`;if(p.obs)t+=`   Obs: ${p.obs}\n`;if(p.cultivar){const c=p.cultivar;t+=`   ${c.a.nome||"A"}: stand=${c.a.stand||"?"}pl/m alt=${c.a.alt||"?"}cm nota=${c.a.nota||"?"}/5 ndvi=${c.a.ndvi||"?"}\n   ${c.b.nome||"B"}: stand=${c.b.stand||"?"}pl/m alt=${c.b.alt||"?"}cm nota=${c.b.nota||"?"}/5 ndvi=${c.b.ndvi||"?"}\n${c.diff?"   Dif: "+c.diff+"\n":""}` ;}if(p.praga)t+=`   ${p.praga.especie||"—"} | ${p.praga.nivel} | ${p.praga.perc||"?"}%área | ${p.praga.ind||"?"}ind./m²\n   Rec: ${p.praga.rec}\n`;if(p.stand)t+=`   Stand: ${p.stand.plantas||"?"}pl/m | Falhas: ${p.stand.falhas||"?"}% | ${p.stand.sit}\n`;if(p.prod)t+=`   Vagens/pl: ${p.prod.vag||"?"} | Grãos/vag: ${p.prod.grao||"?"} | ${p.prod.sc||"?"}sc/ha\n`;if(p.adub)t+=`   ${p.adub.sintoma||"?"} (${p.adub.nutri||"?"}) | Int: ${p.adub.int||"?"}/5 | ${p.adub.perc||"?"}%plantas\n`;t+=`   Fotos: ${p.fotos?p.fotos.length:0}\n`;});t+=`\n${"═".repeat(46)}\nGerado por CampoTrack Pro`;dl(t,`relatorio_${slug(a.nome||"campo")}_${new Date().toISOString().slice(0,10)}.txt`,"text/plain;charset=utf-8");}
 function dl(content,filename,type){const b=new Blob([content],{type}),u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download=filename;a.click();URL.revokeObjectURL(u);}
 function slug(s){return(s||"campo").toLowerCase().replace(/\s+/g,"_").replace(/[^\w-]/g,"").slice(0,30);}
