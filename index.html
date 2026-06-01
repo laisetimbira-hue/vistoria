@@ -240,6 +240,29 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
   <div style="text-align:center;padding-bottom:24px;font-family:var(--font-mono);font-size:15px;color:var(--text3);letter-spacing:1px;">AGRO BASE FIELD · ACESSO RESTRITO</div>
 </div>
 
+<!-- ADMIN -->
+<div class="screen" id="scr-admin">
+  <div class="hdr">
+    <div class="hdr-title">PAINEL ADMIN</div>
+    <button onclick="fazerLogout()" style="background:rgba(91,200,240,0.08);border:1px solid rgba(91,200,240,0.25);border-radius:6px;padding:6px 12px;color:var(--text2);font-family:var(--font-mono);font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;letter-spacing:.5px;"><i class="ti ti-logout" style="font-size:15px;"></i> SAIR</button>
+  </div>
+  <div class="scroll" style="padding:12px;">
+    <!-- Botão ir ao campo -->
+    <button onclick="adminIrAoCampo()" class="btn btn-primary btn-full" style="margin-bottom:16px;font-size:16px;padding:14px;">
+      <i class="ti ti-map-pin"></i> IR AO CAMPO — CRIAR VISTORIA
+    </button>
+    <!-- Filtro por agrônomo -->
+    <div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;">FILTRAR POR USUÁRIO</div>
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;" id="admin-filtros"></div>
+    <!-- Áreas -->
+    <div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;">ÁREAS CADASTRADAS</div>
+    <div id="admin-areas" class="card" style="padding:0;margin:0 0 16px;"></div>
+    <!-- Vistorias -->
+    <div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;">VISTORIAS REALIZADAS</div>
+    <div id="admin-vistorias" class="card" style="padding:0;margin:0;"></div>
+  </div>
+</div>
+
 <!-- AREAS -->
 <div class="screen" id="scr-areas">
   <div class="hero">
@@ -255,7 +278,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
   </div>
   <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px 8px;">
     <span style="font-family:var(--font-mono);font-size:16px;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;">SUAS ÁREAS</span>
-    <button class="btn btn-primary" style="padding:8px 14px;font-size:16px;" onclick="showScreen('scr-nova-area')"><i class="ti ti-plus"></i> NOVA ÁREA</button>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <div id="btn-painel-wrap" style="display:none;">
+        <button onclick="showScreen('scr-admin')" class="btn btn-ghost" style="padding:8px 14px;font-size:14px;"><i class="ti ti-layout-dashboard"></i> PAINEL</button>
+      </div>
+      <button class="btn btn-primary" style="padding:8px 14px;font-size:16px;" onclick="showScreen('scr-nova-area')"><i class="ti ti-plus"></i> NOVA ÁREA</button>
+    </div>
   </div>
   <div id="areas-empty" class="empty" style="display:none;"><i class="ti ti-map-off"></i><div class="empty-t">Nenhuma área ainda</div><div class="empty-s">Cadastre sua primeira área para começar</div></div>
   <div class="card" id="areas-card" style="display:none;padding:0;"><div id="areas-list"></div></div>
@@ -452,20 +480,63 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
   </div>
 </div>
 
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, doc, setDoc, getDocs, addDoc, query, where, orderBy, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDPTDkm0AhIibz4r6fEYw1mtFIKsnq3VDc",
+  authDomain: "agrobase-vistoria.firebaseapp.com",
+  projectId: "agrobase-vistoria",
+  storageBucket: "agrobase-vistoria.firebasestorage.app",
+  messagingSenderId: "310696502928",
+  appId: "1:310696502928:web:5ea3b0e1609ac849921a15"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+window._db = db;
+window._fbReady = true;
+
+// Expõe funções Firestore globalmente
+window._fsCollection = collection;
+window._fsDoc = doc;
+window._fsSetDoc = setDoc;
+window._fsGetDocs = getDocs;
+window._fsAddDoc = addDoc;
+window._fsQuery = query;
+window._fsWhere = where;
+window._fsOrderBy = orderBy;
+window._fsOnSnapshot = onSnapshot;
+window._fsDeleteDoc = deleteDoc;
+
+// Dispara evento quando Firebase estiver pronto
+window.dispatchEvent(new Event('firebase-ready'));
+</script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-let areas=JSON.parse(localStorage.getItem("ct_areas")||"[]");
-let stats=JSON.parse(localStorage.getItem("ct_stats")||'{"vis":0,"km":0}');
+let areas=[];
+let stats={vis:0,km:0};
 let currentArea=null,tracking=false,paused=false,startTime=null,pausedMs=0;
 let timerInt=null,simInt=null,watchId=null,useGPS=false,lastGPSPos=null;
 let gpsPath=[],pontos=[],fotos=[],simPos={x:.45,y:.45},simAngle=Math.random()*Math.PI*2,totalDist=0;
 let mapBounds=null;
+let currentUser=null; // {user, role:'admin'|'agronomo', nome}
+
+// ── USUÁRIOS ─────────────────────────────────────────
+// Cadastro local de usuários (admin gerencia)
+const USERS=[
+  {user:"admin",  pass:"1234",  role:"admin",    nome:"Administrador"},
+  {user:"agro1",  pass:"1234",  role:"agronomo", nome:"Agrônomo 1"},
+  {user:"agro2",  pass:"1234",  role:"agronomo", nome:"Agrônomo 2"},
+];
 
 // ── LOGIN ────────────────────────────────────────────
-const USERS=[{user:"admin",pass:"1234"}];
 function fazerLogout(){
   if(!confirm("Sair do AGRO BASE Field?"))return;
   sessionStorage.removeItem("abf_auth");
+  currentUser=null;areas=[];
   document.getElementById("l-user").value="";
   document.getElementById("l-pass").value="";
   document.getElementById("login-err").textContent="";
@@ -476,8 +547,16 @@ function doLogin(){
   const p=document.getElementById("l-pass").value;
   const err=document.getElementById("login-err");
   const ok=USERS.find(x=>x.user===u&&x.pass===p);
-  if(ok){err.textContent="";sessionStorage.setItem("abf_auth","1");showScreen("scr-areas");}
-  else{err.textContent="Usuário ou senha incorretos.";document.getElementById("l-pass").value="";}
+  if(ok){
+    err.textContent="";
+    currentUser=ok;
+    sessionStorage.setItem("abf_auth", JSON.stringify(ok));
+    if(ok.role==="admin") showScreen("scr-admin");
+    else { carregarAreasUsuario(); showScreen("scr-areas"); }
+  } else {
+    err.textContent="Usuário ou senha incorretos.";
+    document.getElementById("l-pass").value="";
+  }
 }
 function togglePass(){
   const i=document.getElementById("l-pass");
@@ -487,7 +566,61 @@ function togglePass(){
 }
 document.addEventListener("keydown",e=>{if(e.key==="Enter"&&document.getElementById("scr-login").classList.contains("active"))doLogin();});
 // verifica sessão ao carregar
-if(sessionStorage.getItem("abf_auth")==="1"){showScreen("scr-areas");}
+const _savedUser=sessionStorage.getItem("abf_auth");
+if(_savedUser){
+  try{currentUser=JSON.parse(_savedUser);if(currentUser.role==="admin")showScreen("scr-admin");else{carregarAreasUsuario();showScreen("scr-areas");}}catch(e){}
+}
+
+// ── FIREBASE HELPERS ─────────────────────────────────
+async function dbSalvarArea(area){
+  if(!window._db) return;
+  await window._fsSetDoc(window._fsDoc(window._db,"areas",area.id.toString()), {...area, owner: currentUser.user});
+}
+async function dbCarregarAreas(userFilter){
+  if(!window._db) return [];
+  const q = userFilter
+    ? window._fsQuery(window._fsCollection(window._db,"areas"), window._fsWhere("owner","==",userFilter))
+    : window._fsCollection(window._db,"areas");
+  const snap = await window._fsGetDocs(q);
+  return snap.docs.map(d=>d.data());
+}
+async function dbDeletarArea(id){
+  if(!window._db) return;
+  await window._fsDeleteDoc(window._fsDoc(window._db,"areas",id.toString()));
+}
+async function dbSalvarVistoria(vistoria){
+  if(!window._db) return;
+  await window._fsSetDoc(window._fsDoc(window._db,"vistorias",vistoria.id.toString()), {...vistoria, owner: currentUser.user, nomeOwner: currentUser.nome});
+}
+async function dbCarregarVistorias(userFilter){
+  if(!window._db) return [];
+  const col = window._fsCollection(window._db,"vistorias");
+  const q = userFilter ? window._fsQuery(col, window._fsWhere("owner","==",userFilter)) : col;
+  const snap = await window._fsGetDocs(q);
+  return snap.docs.map(d=>d.data()).sort((a,b)=>b.id-a.id);
+}
+
+async function carregarAreasUsuario(){
+  // mostra botão painel só para admin
+  const painelWrap=document.getElementById("btn-painel-wrap");
+  if(painelWrap) painelWrap.style.display=currentUser?.role==="admin"?"block":"none";
+  const saved = localStorage.getItem("ct_areas_"+currentUser.user);
+  areas = saved ? JSON.parse(saved) : [];
+  // tenta sincronizar com Firebase
+  if(window._fbReady){
+    try{
+      const remote = await dbCarregarAreas(currentUser.user);
+      if(remote.length) areas=remote;
+    }catch(e){}
+  }
+  const s=localStorage.getItem("ct_stats_"+currentUser.user);
+  stats=s?JSON.parse(s):{vis:0,km:0};
+  renderAreas();
+}
+function salvarAreasLocal(){
+  localStorage.setItem("ct_areas_"+currentUser.user, JSON.stringify(areas));
+  localStorage.setItem("ct_stats_"+currentUser.user, JSON.stringify(stats));
+}
 
 
 let lmap=null, lPolyline=null, lMarkers=[], lPosMarker=null, lCircle=null;
@@ -553,16 +686,14 @@ function mapClear(){
 
 function resizeCanvas(){ if(lmap) setTimeout(()=>lmap.invalidateSize(),100); }
 function drawMap(){ /* substituído pelo Leaflet */ }
-function showScreen(id){document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));document.getElementById(id).classList.add("active");if(id==="scr-areas")renderAreas();if(id==="scr-vistoria")setTimeout(resizeCanvas,60);if(id==="scr-report"){buildReport();document.getElementById("rep-date").textContent=new Date().toLocaleDateString("pt-BR");}}
 function toggleChip(el){el.classList.toggle("sel");}
 function getChips(){return[...document.querySelectorAll("#obj-chips .chip.sel")].map(c=>c.textContent);}
 function updateSplash(){document.getElementById("ss-areas").textContent=areas.length;document.getElementById("ss-vis").textContent=stats.vis;document.getElementById("ss-km").textContent=stats.km.toFixed(1);}
 const CICONS={Soja:"🌱",Milho:"🌽",Trigo:"🌾",Feijão:"🫘",Canola:"🌼",Aveia:"🌿",Sorgo:"🍀",Girassol:"🌻","":"🌿"};
-function renderAreas(){updateSplash();const list=document.getElementById("areas-list"),empty=document.getElementById("areas-empty"),card=document.getElementById("areas-card");if(!areas.length){empty.style.display="block";card.style.display="none";list.innerHTML="";return;}empty.style.display="none";card.style.display="block";list.innerHTML=areas.map((a,i)=>`<div class="area-item" onclick="abrirVistoria(${i})"><div class="area-icon">${CICONS[a.cultura]||"🌿"}</div><div style="flex:1;min-width:0;"><div class="area-name">${a.nome}</div><div class="area-sub">${[a.cultura,a.cultivar,a.ha?a.ha+" ha":"",a.safra].filter(Boolean).join(" · ")}</div>${a.estadio?`<div class="area-sub2">${a.estadio}${a.municipio?" · "+a.municipio:""}</div>`:""}</div><i class="ti ti-chevron-right area-arr"></i></div>`).join("")+`<div style="padding:12px 16px;"><button onclick="limparAreas()" style="width:100%;padding:10px;background:none;border:1.5px solid var(--border-med);border-radius:8px;font-size:16px;font-weight:600;color:var(--text-muted);cursor:pointer;font-family:Figtree,sans-serif;"><i class="ti ti-trash" style="font-size:16px;vertical-align:-2px;"></i> Limpar todas as áreas</button></div>`;}
+function renderAreas(){updateSplash();const list=document.getElementById("areas-list"),empty=document.getElementById("areas-empty"),card=document.getElementById("areas-card");if(!areas.length){empty.style.display="block";card.style.display="none";list.innerHTML="";return;}empty.style.display="none";card.style.display="block";list.innerHTML=areas.map((a,i)=>`<div class="area-item" onclick="abrirVistoria(${i})"><div class="area-icon">${CICONS[a.cultura]||"🌿"}</div><div style="flex:1;min-width:0;"><div class="area-name">${a.nome}</div><div class="area-sub">${[a.cultura,a.cultivar,a.ha?a.ha+" ha":"",a.safra].filter(Boolean).join(" · ")}</div>${a.estadio?`<div class="area-sub2">${a.estadio}${a.municipio?" · "+a.municipio:""}</div>`:""}</div><i class="ti ti-chevron-right area-arr"></i></div>`).join("")+`<div style="padding:12px 16px;"><button onclick="limparAreas()" style="width:100%;padding:10px;background:none;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-weight:600;color:var(--text3);cursor:pointer;font-family:var(--font-mono);letter-spacing:.5px;"><i class="ti ti-trash" style="font-size:14px;vertical-align:-2px;"></i> LIMPAR ÁREAS</button></div>`;}
 function g(id){const e=document.getElementById(id);return e?e.value.trim():"";}
-function salvarArea(){const nome=g("f-nome");if(!nome){alert("Informe o nome da área.");return;}const a={nome,fazenda:g("f-fazenda"),municipio:g("f-municipio"),safra:g("f-safra"),cultura:g("f-cultura"),cultivar:g("f-cultivar"),ha:g("f-ha"),estadio:g("f-estadio"),pop:g("f-pop"),semeadura:g("f-semeadura"),objetivos:getChips(),obs:g("f-obs"),data:new Date().toLocaleDateString("pt-BR"),id:Date.now()};areas.push(a);localStorage.setItem("ct_areas",JSON.stringify(areas));["f-nome","f-fazenda","f-municipio","f-cultivar","f-ha","f-pop","f-semeadura","f-obs"].forEach(id=>document.getElementById(id).value="");document.getElementById("f-cultura").value="";document.getElementById("f-estadio").value="";document.querySelectorAll("#obj-chips .chip.sel").forEach(c=>c.classList.remove("sel"));currentArea=a;resetVistoria();showScreen("scr-vistoria");}
+async function salvarArea(){const nome=g("f-nome");if(!nome){alert("Informe o nome da área.");return;}const a={nome,fazenda:g("f-fazenda"),municipio:g("f-municipio"),safra:g("f-safra"),cultura:g("f-cultura"),cultivar:g("f-cultivar"),ha:g("f-ha"),estadio:g("f-estadio"),pop:g("f-pop"),semeadura:g("f-semeadura"),objetivos:getChips(),obs:g("f-obs"),data:new Date().toLocaleDateString("pt-BR"),id:Date.now()};areas.push(a);salvarAreasLocal();try{await dbSalvarArea(a);}catch(e){console.warn("Firebase offline");}["f-nome","f-fazenda","f-municipio","f-cultivar","f-ha","f-pop","f-semeadura","f-obs"].forEach(id=>document.getElementById(id).value="");document.getElementById("f-cultura").value="";document.getElementById("f-estadio").value="";document.querySelectorAll("#obj-chips .chip.sel").forEach(c=>c.classList.remove("sel"));currentArea=a;resetVistoria();showScreen("scr-vistoria");}
 function abrirVistoria(i){currentArea=areas[i];resetVistoria();showScreen("scr-vistoria");}
-function limparAreas(){if(!confirm("Apagar todas as áreas?"))return;areas=[];localStorage.setItem("ct_areas",JSON.stringify(areas));renderAreas();}
 function resetVistoria(){tracking=false;paused=false;clearInterval(timerInt);clearInterval(simInt);if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;}gpsPath=[];pontos=[];fotos=[];totalDist=0;startTime=null;pausedMs=0;lastGPSPos=null;mapBounds=null;useGPS=false;document.getElementById("sv-dist").textContent="0.00";document.getElementById("sv-time").textContent="00:00";["sdot","sdot2"].forEach(id=>document.getElementById(id).className="sdot idle");document.getElementById("stext").textContent="Pronto para iniciar";document.getElementById("track-icon").className="ti ti-player-play";document.getElementById("track-lbl").textContent="Iniciar";document.getElementById("btn-track").className="btn btn-primary";document.getElementById("btn-ponto").disabled=true;document.getElementById("vis-title").textContent=currentArea?currentArea.nome:"Vistoria";document.getElementById("vis-badge").textContent="0 pts";document.getElementById("gps-txt").textContent="GPS";renderPontos();setTimeout(()=>{initMap();mapClear();lmap.invalidateSize();},120);}
 function ptColor(t){return{observacao:"#0A84FF",cultivar:"#00C96B",praga:"#FF6B35",doenca:"#FF9F0A",invasora:"#30D158",solo:"#8E8E93",agua:"#5AC8FA",stand:"#64D2FF",producao:"#BF5AF2",adubacao:"#FFD60A",outro:"#636366"}[t]||"#636366";}
 function pad(n){return n.toString().padStart(2,"0");}
@@ -689,10 +820,94 @@ function exportKML(){
 function exportTXT(){const a=currentArea||{},elapsed=pausedMs||(startTime?Date.now()-startTime:0),m=Math.floor(elapsed/60000),s=Math.floor((elapsed%60000)/1000);let t=`RELATÓRIO DE VISTORIA — AGRO BASE Field\n${new Date().toLocaleString("pt-BR")}\n${"═".repeat(46)}\nNome: ${a.nome||"—"} | Fazenda: ${a.fazenda||"—"} | ${a.municipio||"—"}\nSafra: ${a.safra||"—"} | Cultura: ${a.cultura||"—"} | Cultivar: ${a.cultivar||"—"}\nÁrea: ${a.ha||"?"}ha | Estádio: ${a.estadio||"—"}\nObjetivos: ${(a.objetivos||[]).join(", ")||"—"}\n\nVISTORIA: ${m}min${s}s | ${totalDist.toFixed(2)}km | ${pontos.length}pts\n\nPONTOS\n${"─".repeat(40)}\n`;pontos.forEach((p,i)=>{t+=`\n${i+1}. [${TL[p.tipo]}] ${p.titulo}\n   ${p.time} | ${p.dist}km\n`;if(p.obs)t+=`   Obs: ${p.obs}\n`;if(p.cultivar){const c=p.cultivar;t+=`   ${c.a.nome||"A"}: stand=${c.a.stand||"?"}pl/m alt=${c.a.alt||"?"}cm nota=${c.a.nota||"?"}/5 ndvi=${c.a.ndvi||"?"}\n   ${c.b.nome||"B"}: stand=${c.b.stand||"?"}pl/m alt=${c.b.alt||"?"}cm nota=${c.b.nota||"?"}/5 ndvi=${c.b.ndvi||"?"}\n${c.diff?"   Dif: "+c.diff+"\n":""}` ;}if(p.praga)t+=`   ${p.praga.especie||"—"} | ${p.praga.nivel} | ${p.praga.perc||"?"}%área | ${p.praga.ind||"?"}ind./m²\n   Rec: ${p.praga.rec}\n`;if(p.stand)t+=`   Stand: ${p.stand.plantas||"?"}pl/m | Falhas: ${p.stand.falhas||"?"}% | ${p.stand.sit}\n`;if(p.prod)t+=`   Vagens/pl: ${p.prod.vag||"?"} | Grãos/vag: ${p.prod.grao||"?"} | ${p.prod.sc||"?"}sc/ha\n`;if(p.adub)t+=`   ${p.adub.sintoma||"?"} (${p.adub.nutri||"?"}) | Int: ${p.adub.int||"?"}/5 | ${p.adub.perc||"?"}%plantas\n`;t+=`   Fotos: ${p.fotos?p.fotos.length:0}\n`;});t+=`\n${"═".repeat(46)}\nGerado por AGRO BASE Field`;dl(t,`relatorio_${slug(a.nome||"campo")}_${new Date().toISOString().slice(0,10)}.txt`,"text/plain;charset=utf-8");}
 function dl(content,filename,type){const b=new Blob([content],{type}),u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download=filename;a.click();URL.revokeObjectURL(u);}
 function slug(s){return(s||"campo").toLowerCase().replace(/\s+/g,"_").replace(/[^\w-]/g,"").slice(0,30);}
-function finalizarVistoria(){if(!confirm("Finalizar a vistoria?"))return;clearInterval(timerInt);clearInterval(simInt);if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;}tracking=false;if(startTime){pausedMs=Date.now()-startTime;stats.vis++;stats.km=parseFloat((stats.km+totalDist).toFixed(2));localStorage.setItem("ct_stats",JSON.stringify(stats));}buildReport();showScreen("scr-report");}
+async function finalizarVistoria(){
+  if(!confirm("Finalizar a vistoria?"))return;
+  clearInterval(timerInt);clearInterval(simInt);if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;}
+  tracking=false;
+  if(startTime){
+    pausedMs=Date.now()-startTime;
+    stats.vis++;stats.km=parseFloat((stats.km+totalDist).toFixed(2));
+    salvarAreasLocal();
+    // salva vistoria no Firebase
+    const vistoria={
+      id:Date.now(),
+      area:currentArea?.nome||"—",
+      cultura:currentArea?.cultura||"—",
+      fazenda:currentArea?.fazenda||"—",
+      municipio:currentArea?.municipio||"—",
+      ha:currentArea?.ha||"—",
+      distKm:totalDist.toFixed(2),
+      pontos:pontos.length,
+      data:new Date().toLocaleDateString("pt-BR"),
+      dataISO:new Date().toISOString(),
+      gpsUsado:useGPS
+    };
+    try{ await dbSalvarVistoria(vistoria); }catch(e){ console.warn("Firebase offline"); }
+  }
+  buildReport();showScreen("scr-report");
+}
 function confirmarSaida(){if((tracking||pontos.length>0)&&!confirm("Sair da vistoria em andamento?"))return;clearInterval(timerInt);clearInterval(simInt);if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;}tracking=false;showScreen("scr-areas");}
+
+// ── PAINEL ADMIN ──────────────────────────────────────
+let adminFiltro=null;
+async function showScreen(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  if(id==="scr-areas")renderAreas();
+  if(id==="scr-vistoria")setTimeout(resizeCanvas,60);
+  if(id==="scr-report"){buildReport();document.getElementById("rep-date").textContent=new Date().toLocaleDateString("pt-BR");}
+  if(id==="scr-admin")await renderAdmin();
+}
+async function renderAdmin(){
+  // filtros por agrônomo
+  const agros=USERS.filter(u=>u.role==="agronomo");
+  const filtrosEl=document.getElementById("admin-filtros");
+  filtrosEl.innerHTML=`<button onclick="filtrarAdmin(null)" class="btn ${!adminFiltro?"btn-primary":"btn-ghost"}" style="padding:7px 14px;font-size:13px;">TODOS</button>`+
+    agros.map(u=>`<button onclick="filtrarAdmin('${u.user}')" class="btn ${adminFiltro===u.user?"btn-primary":"btn-ghost"}" style="padding:7px 14px;font-size:13px;">${u.nome.toUpperCase()}</button>`).join("");
+
+  // áreas
+  const areasEl=document.getElementById("admin-areas");
+  areasEl.innerHTML=`<div style="padding:14px 16px;font-family:var(--font-mono);font-size:12px;color:var(--text3);">Carregando...</div>`;
+  try{
+    const allAreas=await dbCarregarAreas(adminFiltro);
+    if(!allAreas.length){areasEl.innerHTML=`<div style="padding:14px 16px;font-family:var(--font-mono);font-size:13px;color:var(--text3);">Nenhuma área cadastrada.</div>`;return;}
+    areasEl.innerHTML=allAreas.map(a=>`
+      <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--border);">
+        <div style="font-size:20px;">${CICONS[a.cultura]||"🌿"}</div>
+        <div style="flex:1;">
+          <div style="font-family:var(--font-head);font-size:16px;font-weight:700;">${a.nome}</div>
+          <div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);">${[a.cultura,a.cultivar,a.ha?a.ha+"ha":""].filter(Boolean).join(" · ")} · ${a.data||""}</div>
+          <div style="font-family:var(--font-mono);font-size:11px;color:var(--accent);margin-top:2px;">👤 ${USERS.find(u=>u.user===a.owner)?.nome||a.owner||"—"}</div>
+        </div>
+      </div>`).join("");
+  }catch(e){areasEl.innerHTML=`<div style="padding:14px 16px;color:var(--danger);font-family:var(--font-mono);font-size:13px;">Erro ao carregar: ${e.message}</div>`;}
+
+  // vistorias
+  const visEl=document.getElementById("admin-vistorias");
+  visEl.innerHTML=`<div style="padding:14px 16px;font-family:var(--font-mono);font-size:12px;color:var(--text3);">Carregando...</div>`;
+  try{
+    const allVis=await dbCarregarVistorias(adminFiltro);
+    if(!allVis.length){visEl.innerHTML=`<div style="padding:14px 16px;font-family:var(--font-mono);font-size:13px;color:var(--text3);">Nenhuma vistoria registrada.</div>`;return;}
+    visEl.innerHTML=allVis.map(v=>`
+      <div style="padding:13px 16px;border-bottom:1px solid var(--border);">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-family:var(--font-head);font-size:16px;font-weight:700;">${v.area}</div>
+          <div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);">${v.data}</div>
+        </div>
+        <div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);margin-top:3px;">${v.cultura} · ${v.distKm}km · ${v.pontos}pts · ${v.fazenda||"—"}</div>
+        <div style="font-family:var(--font-mono);font-size:11px;color:var(--accent);margin-top:2px;">👤 ${v.nomeOwner||v.owner||"—"}</div>
+      </div>`).join("");
+  }catch(e){visEl.innerHTML=`<div style="padding:14px 16px;color:var(--danger);font-family:var(--font-mono);font-size:13px;">Erro: ${e.message}</div>`;}
+}
+async function adminIrAoCampo(){
+  await carregarAreasUsuario();
+  showScreen("scr-areas");
+}
+
 window.addEventListener("resize",()=>{if(lmap)lmap.invalidateSize();});
-renderAreas();
+// inicializa navegação — showScreen já declarado acima
+// renderAreas chamado via carregarAreasUsuario ou showScreen
+
 </script>
 </body>
 </html>
