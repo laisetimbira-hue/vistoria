@@ -1098,8 +1098,7 @@ let geoLeafletMap=null, geoLayer=null;
 function initGeoMap(){
   if(geoLeafletMap) return;
   geoLeafletMap = L.map('geo-map',{zoomControl:true,attributionControl:false});
-  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:20}).addTo(geoLeafletMap);
-  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',{maxZoom:20,opacity:0.7}).addTo(geoLeafletMap);
+  addSatTiles(geoLeafletMap);
 }
 
 // Calcula área do polígono em hectares (fórmula de Shoelace com conversão geodésica)
@@ -1567,25 +1566,43 @@ abrirIDB().then(()=>{
 let lmap=null, lPolyline=null, lMarkers=[], lPosMarker=null, lCircle=null;
 const DEFAULT_CENTER=[-28.51,-50.87]; // Vacaria RS
 
+
+// helper tileLayer — OSM base garantida + satélite Esri por cima quando disponível
+function addSatTiles(map){
+  // OSM sempre carrega — base confiável
+  const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    maxZoom:19,attribution:'© OpenStreetMap contributors',opacity:1
+  }).addTo(map);
+
+  // Tenta Esri por cima — se funcionar, substitui OSM
+  const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{
+    maxZoom:20,attribution:'© Esri',opacity:0
+  });
+  const labels=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',{
+    maxZoom:20,opacity:0
+  });
+
+  // Testa se Esri responde com tile válido (não cinza "not available")
+  const testUrl=`https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/10/384/308`;
+  const img=new Image();
+  img.onload=()=>{
+    // carregou — ativa satélite e remove OSM
+    sat.addTo(map);sat.setOpacity(1);
+    labels.addTo(map);labels.setOpacity(0.75);
+    setTimeout(()=>map.removeLayer(osm),200);
+  };
+  img.onerror=()=>{}; // mantém OSM
+  img.src=testUrl;
+}
+
 function initMap(){
   if(lmap) return;
   lmap = L.map('leaflet-map', {
     center: DEFAULT_CENTER, zoom: 16,
     zoomControl: true, attributionControl: true
   });
-
-  // Satélite Esri (gratuito, sem API key)
-  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    attribution: 'Tiles © Esri &mdash; Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP',
-    maxZoom: 20
-  }).addTo(lmap);
-
-  // Labels por cima do satélite
-  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
-    maxZoom: 20, opacity: 0.7
-  }).addTo(lmap);
-
-  lPolyline = L.polyline([], {color:'#00C96B', weight:4, opacity:0.9}).addTo(lmap);
+  addSatTiles(lmap);
+  lPolyline = L.polyline([], {color:'#5BC8F0', weight:4, opacity:0.9}).addTo(lmap);
 }
 
 function mapAddPoint(lat, lng){
@@ -2135,8 +2152,7 @@ function buildReport(){
     mapDiv.style.height="300px";mapDiv.style.display="block";
     const rm=L.map("rep-map",{zoomControl:true,attributionControl:false});
     window._repMap=rm;
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:20}).addTo(rm);
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',{maxZoom:20,opacity:0.7}).addTo(rm);
+        addSatTiles(rm);
     // polígono do talhão
     if(hasPoly){
       L.polygon(currentArea.poligono.map(c=>[c.lat,c.lng]),{color:"#5BC8F0",weight:2,opacity:0.7,fillColor:"#5BC8F0",fillOpacity:0.08,dashArray:"6,4"}).addTo(rm);
@@ -2275,7 +2291,7 @@ function exportKML(){
   const a=currentArea||{nome:"Vistoria"};
   const kmlStr=gerarKMLString(null);
   if(!useGPS||gpsPath.length===0){
-    alert("⚠️ GPS não estava ativo.\nO KML não terá rota real.\n\nAbra via HTTPS e permita o GPS.");
+    mostrarToastSync("⚠ KML sem rota GPS — abra via HTTPS e permita localização");
   }
   dl(kmlStr,`vistoria_${slug(a.nome)}_${new Date().toISOString().slice(0,10)}.kml`,"application/vnd.google-earth.kml+xml");
 }
@@ -2391,8 +2407,7 @@ async function renderAdmin(){
   setTimeout(()=>{
     if(adminMap){adminMap.remove();adminMap=null;}
     adminMap=L.map("admin-map",{zoomControl:true,attributionControl:false});
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:20}).addTo(adminMap);
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',{maxZoom:20,opacity:0.7}).addTo(adminMap);
+        addSatTiles(adminMap);
     const allLls=[];
     allAreas.forEach(a=>{
       if(a.poligono?.length>2){
@@ -2542,8 +2557,7 @@ function dtBuildReport(){
     if(window._repMapDt){window._repMapDt.remove();window._repMapDt=null;}
     const rm=L.map(repMapEl,{zoomControl:true,attributionControl:false});
     window._repMapDt=rm;
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:20}).addTo(rm);
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',{maxZoom:20,opacity:0.7}).addTo(rm);
+        addSatTiles(rm);
     if(currentArea?.poligono?.length>2)L.polygon(currentArea.poligono.map(c=>[c.lat,c.lng]),{color:"#5BC8F0",weight:2,opacity:0.7,fillColor:"#5BC8F0",fillOpacity:0.08,dashArray:"6,4"}).addTo(rm);
     if(useGPS&&gpsPath.length>1){const lls=gpsPath.map(p=>[p.lat,p.lng]);L.polyline(lls,{color:"#5BC8F0",weight:3.5,opacity:0.9}).addTo(rm);L.circleMarker(lls[0],{radius:7,color:"#fff",fillColor:"#00C96B",fillOpacity:1,weight:2.5}).bindTooltip("Início",{permanent:true,direction:"top",offset:[0,-8]}).addTo(rm);L.circleMarker(lls[lls.length-1],{radius:7,color:"#fff",fillColor:"#E05252",fillOpacity:1,weight:2.5}).bindTooltip("Fim",{permanent:true,direction:"top",offset:[0,-8]}).addTo(rm);}
     pontos.forEach((p,i)=>{if(!p.gps)return;const color=ptColor(p.tipo);const icon=L.divIcon({className:"",html:`<div style="width:28px;height:28px;border-radius:50%;background:${color};border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#fff;">${i+1}</div>`,iconSize:[28,28],iconAnchor:[14,14]});L.marker([p.gps.lat,p.gps.lng],{icon}).bindPopup(`<b>${i+1}. ${p.titulo}</b><br><small>${TL[p.tipo]} · ${p.time}</small>`).addTo(rm);});
