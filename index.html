@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#0D1E2E">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>AGRO BASE Field</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -300,21 +301,30 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
     position:fixed;bottom:0;left:0;right:0;z-index:100;
     padding:12px 16px calc(env(safe-area-inset-bottom,0px) + 16px);
     background:linear-gradient(to top,rgba(10,20,30,0.95) 60%,transparent 100%);
-    display:flex;align-items:flex-end;gap:12px;
+    display:flex;align-items:flex-end;justify-content:flex-end;gap:12px;
   }
 
-  /* botão principal de rastreamento */
+  /* todos os FABs iguais */
   .mob-track-btn{
-    flex:1;height:58px;border-radius:16px;border:none;cursor:pointer;
-    font-family:var(--font-head);font-size:18px;font-weight:700;letter-spacing:.5px;
-    display:flex;align-items:center;justify-content:center;gap:10px;
-    transition:all .2s;
-    background:var(--accent);color:#071826;
+    width:64px;height:64px;border-radius:50%;border:none;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    backdrop-filter:blur(12px);transition:all .2s;
+    background:var(--accent);
+    box-shadow:0 4px 20px rgba(91,200,240,0.4);
   }
-  .mob-track-btn.recording{background:var(--danger);color:#fff;}
-  .mob-track-btn.paused{background:var(--amber);color:#071826;}
-  .mob-track-btn:active{transform:scale(0.96);}
-  .mob-track-btn i{font-size:22px;}
+  .mob-track-btn.recording{
+    background:var(--danger);
+    box-shadow:0 4px 20px rgba(224,82,82,0.5);
+    animation:recPulse 2s infinite;
+  }
+  .mob-track-btn.paused{
+    background:var(--amber);
+    box-shadow:0 4px 20px rgba(224,155,42,0.4);
+  }
+  .mob-track-btn:active{transform:scale(0.92);}
+  .mob-track-btn i{font-size:26px;color:#071826;}
+  .mob-track-btn.recording i,.mob-track-btn.paused i{color:#fff;}
+  @keyframes recPulse{0%,100%{box-shadow:0 4px 20px rgba(224,82,82,0.5)}50%{box-shadow:0 4px 32px rgba(224,82,82,0.8),0 0 0 8px rgba(224,82,82,0.15)}}
 
   /* botões secundários */
   .mob-sec-btns{display:flex;flex-direction:column;gap:8px;}
@@ -738,6 +748,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
         <div class="dt-sidebar-item" onclick="dtAdminTab('alertas')"><i class="ti ti-alert-triangle" style="color:var(--danger);"></i>Alertas Geofence</div>
         <div class="dt-sidebar-section">CAMPO</div>
         <div class="dt-sidebar-item" onclick="adminIrAoCampo()"><i class="ti ti-map-pin"></i>Ir ao Campo</div>
+        <div class="dt-sidebar-item" onclick="precacheMapa()"><i class="ti ti-wifi-off"></i>Salvar mapa offline</div>
       </nav>
       <div style="padding:12px 8px;border-top:1px solid var(--border);">
         <div style="font-family:var(--font-mono);font-size:10px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;padding:0 12px 8px;">FILTRAR POR</div>
@@ -1014,21 +1025,23 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
     <div class="mob-extra-item" onclick="buildReport();showScreen('scr-report');fecharExtra()"><i class="ti ti-clipboard-text"></i> Relatório</div>
     <div class="mob-extra-item" onclick="exportKML();fecharExtra()"><i class="ti ti-download"></i> Exportar KML</div>
     <div class="mob-extra-item" onclick="exportTXT();fecharExtra()"><i class="ti ti-file-text"></i> Exportar TXT</div>
+    <div class="mob-extra-item" onclick="precacheMapa();fecharExtra()"><i class="ti ti-wifi-off"></i> Salvar mapa offline<span id="precache-status" style="font-size:10px;color:var(--text3);display:block;margin-top:2px;"></span></div>
     <div class="mob-extra-item danger" onclick="finalizarVistoria();fecharExtra()"><i class="ti ti-flag-3"></i> Finalizar vistoria</div>
   </div>
 
   <!-- barra de ação principal -->
   <div class="mob-action-bar dt-hide-desktop">
+    <div class="mob-sec-btns">
+      <button class="mob-fab mob-fab-more" onclick="toggleExtra()">
+        <i class="ti ti-dots" id="mob-more-icon"></i>
+      </button>
+    </div>
     <button class="mob-track-btn" id="btn-track" onclick="toggleTracking()">
       <i class="ti ti-player-play" id="track-icon"></i>
-      <span id="track-lbl">Iniciar</span>
     </button>
     <div class="mob-sec-btns">
       <button class="mob-fab mob-fab-ponto" id="btn-ponto" onclick="showModalPonto()" disabled>
         <i class="ti ti-map-pin"></i>
-      </button>
-      <button class="mob-fab mob-fab-more" onclick="toggleExtra()">
-        <i class="ti ti-dots" id="mob-more-icon"></i>
       </button>
     </div>
   </div>
@@ -1705,6 +1718,28 @@ async function salvarKMLFirestore(visId,kmlStr){
 }
 
 // override do log geofence para usar IDB
+async function dbExcluirVistoria(id){
+  const sid=id.toString();
+  // IDB
+  if(idb) await idbDelete("vistorias",id).catch(()=>{});
+  // KML vinculado
+  if(idb) await idbDelete("kmls",sid).catch(()=>{});
+  if(isOnline && window._db){
+    try{
+      await window._fsDeleteDoc(window._fsDoc(window._db,"vistorias",sid));
+      await window._fsDeleteDoc(window._fsDoc(window._db,"kmls",sid));
+    }catch(e){console.warn("Erro ao excluir vistoria Firebase",e);}
+  }
+}
+
+async function confirmarExcluirVistoria(id, nome){
+  if(!confirm(`Excluir vistoria "${nome}"?\n\nIsso remove permanentemente os dados e o KML vinculado.`)) return;
+  mostrarToastSync("Excluindo...");
+  await dbExcluirVistoria(id);
+  mostrarToastSync("✓ Vistoria excluída");
+  await renderAdmin();
+}
+
 async function ignorarGeofenceIniciar(){
   document.getElementById("modal-fora").style.display="none";
   geofenceAtivo=false;
@@ -1824,7 +1859,7 @@ function initMap(){
   const el = document.getElementById(elId);
   if(!el||typeof L==="undefined") return;
   lmap = L.map(el, {
-    center: DEFAULT_CENTER, zoom: 16,
+    center: DEFAULT_CENTER, zoom: 14,
     zoomControl: IS_DESKTOP(),
     attributionControl: false
   });
@@ -1908,14 +1943,16 @@ function mapClear(){
   if(lPolyline) lPolyline.setLatLngs([]);
   lMarkers.forEach(m=>lmap.removeLayer(m)); lMarkers=[];
   if(lPosMarker){lmap.removeLayer(lPosMarker);lPosMarker=null;}
-  // desenha polígono do talhão se existir
   if(window._talhaoPoly){lmap.removeLayer(window._talhaoPoly);window._talhaoPoly=null;}
   if(currentArea?.poligono?.length>2){
     const lls=currentArea.poligono.map(c=>[c.lat,c.lng]);
     window._talhaoPoly=L.polygon(lls,{color:"#5BC8F0",weight:2,opacity:0.7,fillColor:"#5BC8F0",fillOpacity:0.08,dashArray:"6,4"}).addTo(lmap);
-    lmap.fitBounds(window._talhaoPoly.getBounds(),{padding:[24,24]});
+    // centraliza no polígono com zoom adequado
+    lmap.fitBounds(window._talhaoPoly.getBounds(),{padding:[40,40],maxZoom:18});
   } else {
-    lmap.setView(DEFAULT_CENTER, 16);
+    // sem polígono: usa GPS atual se disponível, senão centro padrão
+    if(lastGPSPos){lmap.setView([lastGPSPos.lat,lastGPSPos.lng],16);}
+    else{lmap.setView(DEFAULT_CENTER,14);}
   }
 }
 
@@ -2145,6 +2182,10 @@ function startTracking(){
       if(lastGPSPos){const d=geoD(lastGPSPos.lat,lastGPSPos.lng,lat,lng);if(d<100){totalDist+=d/1000;const dEl=document.getElementById("sv-dist");if(dEl)dEl.textContent=totalDist.toFixed(3);const dElDt=document.getElementById("sv-dist-dt");if(dElDt)dElDt.textContent=totalDist.toFixed(3);}}
       lastGPSPos={lat,lng,acc,alt:pos.coords.altitude||null,ts:Date.now()};
       gpsPath.push({lat,lng,acc,alt:pos.coords.altitude||null,ts:Date.now()});
+      // centraliza no primeiro ponto GPS real e sobe zoom
+      if(gpsPath.length===1 && lmap){
+        lmap.setView([lat,lng], 18, {animate:true});
+      }
       const ptEl=document.getElementById("sv-pts");if(ptEl)ptEl.textContent=gpsPath.length;
       const ptElDt=document.getElementById("sv-pts-dt");if(ptElDt)ptElDt.textContent=gpsPath.length;
       if(geofenceAtivo)verificarGeofence(lat,lng);
@@ -2726,7 +2767,13 @@ async function renderAdmin(){
     :allVis.map(v=>`<div style="padding:13px 16px;border-bottom:1px solid var(--border);">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
           <div style="font-family:var(--font-head);font-size:17px;font-weight:700;">${v.area}</div>
-          <div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);white-space:nowrap;">${v.data}</div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);white-space:nowrap;">${v.data}</div>
+            <button onclick="confirmarExcluirVistoria(${v.id},'${(v.area||'').replace(/'/g,"\\'")}')" title="Excluir vistoria"
+              style="background:none;border:1px solid rgba(224,82,82,0.3);border-radius:4px;padding:3px 7px;cursor:pointer;color:var(--danger);font-size:13px;display:flex;align-items:center;flex-shrink:0;">
+              <i class="ti ti-trash" style="font-size:14px;"></i>
+            </button>
+          </div>
         </div>
         <div style="font-family:var(--font-mono);font-size:12px;color:var(--text3);margin-top:3px;display:flex;flex-wrap:wrap;gap:8px;">
           <span>📍 ${v.distKm}km</span><span>⏱ ${v.duracaoStr||"—"}</span><span>🚶 ${v.velMediaKmh||"—"}km/h</span><span>📌 ${v.pontos}pts</span>${v.ha?`<span>🌾 ${v.ha}ha</span>`:""}
@@ -2737,10 +2784,63 @@ async function renderAdmin(){
         </div>
       </div>`).join("");
 }
+
 async function filtrarAdmin(user){adminFiltro=user;await renderAdmin();}
 async function adminIrAoCampo(){await carregarAreasUsuario();showScreen("scr-areas");}
 
-// ── DESKTOP RESPONSIVO ───────────────────────────────
+// ── SERVICE WORKER ────────────────────────────────────
+if('serviceWorker' in navigator){
+  window.addEventListener('load', async ()=>{
+    try{
+      const reg = await navigator.serviceWorker.register('./sw.js');
+      console.log('[SW] Registrado:', reg.scope);
+
+      // Escuta mensagens do SW (progresso de pré-cache)
+      navigator.serviceWorker.addEventListener('message', e=>{
+        if(e.data?.tipo==='PRECACHE_PROGRESS'){
+          const el=document.getElementById('precache-status');
+          if(el) el.textContent=`Cacheando... ${e.data.count} tiles`;
+        }
+        if(e.data?.tipo==='PRECACHE_DONE'){
+          const el=document.getElementById('precache-status');
+          if(el){el.textContent=`✓ ${e.data.count} tiles salvos para uso offline`;el.style.color='var(--accent)';}
+          mostrarToastSync(`✓ Mapa offline: ${e.data.count} tiles cacheados`);
+        }
+      });
+    }catch(e){
+      console.warn('[SW] Registro falhou:', e);
+    }
+  });
+}
+
+// Pré-cacheia tiles da área atual para uso offline
+function precacheMapa(){
+  if(!navigator.serviceWorker?.controller){
+    mostrarToastSync('⚠ Serviço offline não disponível ainda. Recarregue o app.');
+    return;
+  }
+  if(!currentArea?.poligono?.length){
+    mostrarToastSync('⚠ Cadastre uma área com KML para cachear o mapa.');
+    return;
+  }
+  // Calcula bounding box do polígono com margem
+  const lats=currentArea.poligono.map(p=>p.lat);
+  const lngs=currentArea.poligono.map(p=>p.lng);
+  const margin=0.01; // ~1km de margem
+  const bounds=[
+    Math.min(...lats)-margin, Math.max(...lats)+margin,
+    Math.min(...lngs)-margin, Math.max(...lngs)+margin
+  ];
+  const el=document.getElementById('precache-status');
+  if(el){el.textContent='Iniciando cache de tiles...';el.style.color='var(--text3)';}
+  mostrarToastSync('Salvando mapa para uso offline...');
+  navigator.serviceWorker.controller.postMessage({
+    tipo:'PRECACHE_TILES',
+    bounds,
+    zoom:[13,18] // zoom 13 a 18 — suficiente para vistoria de campo
+  });
+}
+
 const IS_DESKTOP=()=>window.innerWidth>=1024;
 const CICONS_DESKTOP=CICONS;
 
