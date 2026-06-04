@@ -210,18 +210,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 /* Mobile: oculta elementos desktop-only */
 .dt-only{display:none !important;}
 .dt-hide-desktop{display:flex;flex-direction:column;}
-@media(min-width:1024px){
-  .dt-only{display:grid !important;}
-  .dt-hide-desktop{display:none !important;}
-  /* exceções de display para dt-only */
-  .dt-admin-layout.dt-only{display:grid !important;}
-  .dt-vis-layout.dt-only{display:grid !important;}
-  .dt-report-layout.dt-only{display:grid !important;}
-  .dt-areas-layout.dt-only{display:grid !important;}
-  .dt-geo-layout.dt-only{display:grid !important;}
-  .dt-form-layout.dt-only{display:grid !important;}
-  #scr-login-bg{display:flex;}
-}
+
 
 ::-webkit-scrollbar{width:4px;}
 ::-webkit-scrollbar-track{background:var(--surface);}
@@ -391,9 +380,22 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
   #scr-vistoria #map-wrap-mobile{display:none !important;}
 }
 
+/* ═══════════════════════════════════════════════════
+   DESKTOP LAYOUT — min-width: 1024px
    Mobile: inalterado abaixo deste breakpoint
    ═══════════════════════════════════════════════════ */
 @media(min-width:1024px){
+
+  .dt-only{display:grid !important;}
+  .dt-hide-desktop{display:none !important;}
+  /* exceções de display para dt-only */
+  .dt-admin-layout.dt-only{display:grid !important;}
+  .dt-vis-layout.dt-only{display:grid !important;}
+  .dt-report-layout.dt-only{display:grid !important;}
+  .dt-areas-layout.dt-only{display:grid !important;}
+  .dt-geo-layout.dt-only{display:grid !important;}
+  .dt-form-layout.dt-only{display:grid !important;}
+  #scr-login-bg{display:flex;}
 
   /* ── BASE ── */
   body{font-size:14px;}
@@ -716,7 +718,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 <!-- ADMIN -->
 <div class="screen" id="scr-admin">
   <!-- mobile header -->
-  <div class="hdr dt-hide">
+  <div class="hdr dt-hide-desktop">
     <div class="hdr-title">PAINEL ADMIN</div>
     <button onclick="fazerLogout()" style="background:rgba(91,200,240,0.08);border:1px solid rgba(91,200,240,0.25);border-radius:6px;padding:6px 12px;color:var(--text2);font-family:var(--font-mono);font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;letter-spacing:.5px;"><i class="ti ti-logout" style="font-size:15px;"></i> SAIR</button>
   </div>
@@ -1298,7 +1300,7 @@ let geoLeafletMap=null, geoLayer=null;
 
 function initGeoMap(){
   if(geoLeafletMap) return;
-  geoLeafletMap = L.map('geo-map',{zoomControl:true,attributionControl:false});
+  geoLeafletMap = L.map('geo-map',{zoomControl:true,attributionControl:false,crossOrigin:true});
   addSatTiles(geoLeafletMap);
 }
 
@@ -1767,18 +1769,51 @@ abrirIDB().then(()=>{
 let lmap=null, lPolyline=null, lMarkers=[], lPosMarker=null, lCircle=null;
 const DEFAULT_CENTER=[-28.51,-50.87]; // Vacaria RS
 
-// helper tileLayer — OSM base garantida + satélite Esri por cima quando disponível
+// helper tileLayer — múltiplos providers com fallback automático
 function addSatTiles(map){
   if(typeof L==="undefined"){console.warn("Leaflet não carregado");return;}
+
+  // Provider 1: Esri satélite (HTTPS, funciona no Safari)
+  const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{
+    maxZoom:20, attribution:'© Esri',
+    crossOrigin:true
+  });
+  // Labels sobre o satélite
+  const labels=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',{
+    maxZoom:20, opacity:0.8, crossOrigin:true
+  });
+  // Provider 2: OSM fallback
   const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-    maxZoom:19,attribution:'© OpenStreetMap contributors',opacity:1
-  }).addTo(map);
-  const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:20,attribution:'© Esri',opacity:0});
-  const labels=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',{maxZoom:20,opacity:0});
-  const img=new Image();
-  img.onload=()=>{sat.addTo(map);sat.setOpacity(1);labels.addTo(map);labels.setOpacity(0.75);setTimeout(()=>map.removeLayer(osm),200);};
-  img.onerror=()=>{};
-  img.src=`https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/10/384/308`;
+    maxZoom:19, attribution:'© OpenStreetMap', crossOrigin:true
+  });
+
+  // Tenta Esri primeiro; se falhar usa OSM
+  let esriFailed=0, esriLoaded=false;
+  sat.on('tileload',()=>{if(!esriLoaded){esriLoaded=true;}});
+  sat.on('tileerror',()=>{
+    esriFailed++;
+    if(esriFailed>=2&&!esriLoaded){
+      map.removeLayer(sat);
+      map.removeLayer(labels);
+      if(!map.hasLayer(osm)) osm.addTo(map);
+    }
+  });
+
+  // Adiciona Esri por padrão
+  sat.addTo(map);
+  labels.addTo(map);
+
+  // Testa conectividade com um tile conhecido antes de decidir
+  const testImg=new Image();
+  testImg.crossOrigin="anonymous";
+  testImg.onload=()=>{ esriLoaded=true; }; // Esri ok
+  testImg.onerror=()=>{
+    // Esri falhou — vai direto para OSM
+    if(map.hasLayer(sat)) map.removeLayer(sat);
+    if(map.hasLayer(labels)) map.removeLayer(labels);
+    if(!map.hasLayer(osm)) osm.addTo(map);
+  };
+  testImg.src='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/8/96/78?t='+Date.now();
 }
 
 function initMap(){
