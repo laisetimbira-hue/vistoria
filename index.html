@@ -2,12 +2,14 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0D1E2E">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>AGRO BASE Field</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<title>AGRO BASE</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" media="print" onload="this.media='all';this.onload=null;" onerror="this.remove()">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -32,8 +34,144 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:17px;min-height:100vh;-webkit-font-smoothing:antialiased;}
 #app{width:100%;max-width:430px;min-height:100vh;background:var(--bg);margin:0 auto;display:flex;flex-direction:column;}
+@media(min-width:1024px){#app{max-width:100%;margin:0;}}
+
+/* ═══════════════════════════════════════
+   DESKTOP — min-width: 1024px
+   ═══════════════════════════════════════ */
+@media(min-width:1024px){
+  :root{--sidebar:240px;--topbar:52px;}
+  body{overflow-x:hidden;overflow-y:hidden;}
+  #app{max-width:100%;margin:0;display:block;}
+  .screen{min-height:calc(100vh - var(--topbar));width:100%;max-width:100%;}
+  .dt-topbar{width:100%;}
+
+  /* ── TOPBAR ── */
+  .dt-topbar{display:flex;align-items:center;height:var(--topbar);background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;position:sticky;top:0;z-index:200;gap:0;}
+  .dt-brand{font-family:var(--font-head);font-size:18px;font-weight:800;color:var(--accent);letter-spacing:1px;margin-right:32px;display:flex;align-items:center;gap:8px;}
+  .dt-nav{display:flex;gap:4px;flex:1;}
+  .dt-nav-btn{background:transparent;border:none;cursor:pointer;padding:6px 14px;border-radius:var(--radius);font-family:var(--font-mono);font-size:12px;color:var(--text3);letter-spacing:.5px;display:flex;align-items:center;gap:6px;transition:.15s;}
+  .dt-nav-btn:hover{background:var(--surface2);color:var(--text);}
+  .dt-nav-btn.active{background:rgba(91,200,240,.1);color:var(--accent);border:1px solid rgba(91,200,240,.2);}
+  .dt-nav-btn i{font-size:15px;}
+  .dt-topbar-right{display:flex;align-items:center;gap:8px;margin-left:auto;}
+  .dt-user{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:5px 12px;font-family:var(--font-mono);font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px;}
+  .dt-conn{width:7px;height:7px;border-radius:50%;background:var(--accent);}
+
+  /* oculta/mostra elementos */
+  .dt-only{display:flex !important;}
+  .dt-hide{display:none !important;}
+  .dt-block{display:block !important;}
+  .dt-grid{display:grid !important;}
+
+  /* ── LOGIN ── */
+  #scr-login .login-wrap{width:440px;padding:40px;background:var(--surface);border:1px solid var(--border);border-radius:14px;}
+  #scr-login .login-card{background:transparent;border:none;padding:0;}
+  #scr-login .login-logo{margin-bottom:20px;}
+  #scr-login .login-logo-mark{font-size:52px;line-height:1;}
+  #scr-login .login-logo-line{display:none;}
+  #scr-login>div:last-child{position:fixed;bottom:20px;right:24px;}
+
+  /* ── ADMIN ── */
+  #scr-admin .hdr{display:none;}
+  .dt-admin-layout{display:grid;grid-template-columns:var(--sidebar) 1fr;min-height:calc(100vh - var(--topbar));}
+  .dt-admin-sidebar{background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;position:sticky;top:var(--topbar);height:calc(100vh - var(--topbar));}
+  .dt-sidebar-logo{padding:20px;border-bottom:1px solid var(--border);}
+  .dt-sidebar-logo div{font-family:var(--font-head);font-size:15px;font-weight:700;}
+  .dt-sidebar-logo span{font-family:var(--font-mono);font-size:11px;color:var(--text3);}
+  .dt-sidebar-nav{padding:12px 8px;flex:1;}
+  .dt-sidebar-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius);font-family:var(--font-mono);font-size:12px;color:var(--text3);cursor:pointer;transition:.15s;margin-bottom:2px;}
+  .dt-sidebar-item:hover{background:var(--surface2);color:var(--text);}
+  .dt-sidebar-item.active{background:rgba(91,200,240,.1);color:var(--accent);border-left:2px solid var(--accent);}
+  .dt-sidebar-item i{font-size:16px;flex-shrink:0;}
+  .dt-sidebar-sec{padding:14px 20px 6px;font-family:var(--font-mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;}
+  .dt-admin-main{overflow-y:auto;padding:24px;}
+  .dt-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+  .dt-stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;text-align:center;}
+  .dt-stat-v{font-family:var(--font-head);font-size:32px;font-weight:800;color:var(--accent);line-height:1;}
+  .dt-stat-l{font-family:var(--font-mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:4px;}
+  .dt-admin-map{height:300px;border-radius:10px;overflow:hidden;border:1px solid var(--border);margin-bottom:24px;}
+  .dt-admin-panels{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .dt-panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+  .dt-panel-hd{padding:12px 16px;border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;display:flex;align-items:center;gap:6px;}
+  .dt-panel-hd.danger{color:var(--danger);}
+
+  /* ── ÁREAS ── */
+  #scr-areas .hero{display:none;}
+  .dt-areas-layout{display:grid;grid-template-columns:260px 1fr;min-height:calc(100vh - var(--topbar));}
+  .dt-areas-sidebar{background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;padding:20px;}
+  .dt-areas-main{overflow-y:auto;padding:24px;}
+  .dt-areas-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
+  .dt-area-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;gap:12px;}
+  .dt-area-card:hover{border-color:var(--accent);background:var(--surface2);}
+  .dt-area-top{display:flex;align-items:center;gap:12px;}
+  .dt-area-icon{width:44px;height:44px;border-radius:var(--radius);background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+  .dt-area-name{font-family:var(--font-head);font-size:17px;font-weight:700;}
+  .dt-area-sub{font-family:var(--font-mono);font-size:11px;color:var(--text3);margin-top:2px;}
+  .dt-area-tags{display:flex;flex-wrap:wrap;gap:5px;}
+  .dt-tag{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-family:var(--font-mono);font-size:11px;color:var(--text2);}
+  .dt-tag.accent{border-color:rgba(91,200,240,.3);color:var(--accent);}
+
+  /* ── VISTORIA ── */
+  #scr-vistoria .hdr{display:none;}
+  #scr-vistoria .ctrl-row{display:none;}
+  #scr-vistoria .stats-row{display:none;}
+  #scr-vistoria .pontos-wrap{display:none;}
+  #scr-vistoria .bot-bar{display:none;}
+  .dt-vis-layout{display:grid;grid-template-columns:1fr 360px;grid-template-rows:1fr auto;height:calc(100vh - var(--topbar));}
+  #map-wrap{grid-column:1;grid-row:1/3;position:relative;}
+  #leaflet-map{height:100% !important;}
+  .dt-vis-panel{grid-column:2;grid-row:1;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+  .dt-vis-hd{padding:16px;border-bottom:1px solid var(--border);}
+  .dt-vis-hd-title{font-family:var(--font-head);font-size:17px;font-weight:800;margin-bottom:10px;}
+  .dt-vis-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:12px 16px;border-bottom:1px solid var(--border);}
+  .dt-vis-stat{text-align:center;}
+  .dt-vis-stat .v{font-family:var(--font-head);font-size:22px;font-weight:800;color:var(--accent);}
+  .dt-vis-stat .l{font-family:var(--font-mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;}
+  .dt-vis-pts{flex:1;overflow-y:auto;padding:8px 0;}
+  .dt-vis-footer{grid-column:2;grid-row:2;padding:12px 16px;background:var(--surface);border-left:1px solid var(--border);border-top:1px solid var(--border);display:flex;gap:8px;}
+
+  /* ── RELATÓRIO ── */
+  #scr-report .hdr{display:none;}
+  #scr-report .bot-bar{display:none;}
+  #scr-report .scroll{display:none;}
+  .dt-rep-layout{display:grid;grid-template-columns:1fr 420px;height:calc(100vh - var(--topbar));}
+  .dt-rep-map{overflow:hidden;}
+  #rep-map{height:100% !important;}
+  .dt-rep-data{background:var(--surface);border-left:1px solid var(--border);overflow-y:auto;}
+  .dt-rep-actions{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;gap:8px;}
+
+  /* ── GEO ── */
+  #scr-geo .hdr{display:none;}
+  .dt-geo-layout{display:grid;grid-template-columns:1fr 380px;min-height:calc(100vh - var(--topbar));}
+  #geo-map{height:100% !important;min-height:400px;}
+  .dt-geo-panel{background:var(--surface);border-left:1px solid var(--border);overflow-y:auto;padding:24px;}
+  #scr-geo .scroll{display:block;overflow-y:auto;height:calc(100vh - var(--topbar));}
+
+  /* ── NOVA ÁREA ── */
+  #scr-nova-area .hdr{display:none;}
+  .dt-form-layout{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:24px;max-width:1100px;margin:0 auto;}
+  .dt-form-col{display:flex;flex-direction:column;gap:14px;}
+  .dt-form-full{grid-column:1/3;}
+  #scr-nova-area .btn-row{grid-column:1/3;justify-content:flex-end;}
+  #scr-nova-area .btn-row .btn{flex:none;min-width:160px;}
+}
+
+@media(min-width:1440px){
+  :root{--sidebar:260px;}
+  .dt-areas-grid{grid-template-columns:repeat(auto-fill,minmax(300px,1fr));}
+  .dt-form-layout{grid-template-columns:1fr 1fr 1fr;}
+  .dt-form-full{grid-column:1/4;}
+  #scr-nova-area .btn-row{grid-column:1/4;}
+  .dt-stat-grid{grid-template-columns:repeat(5,1fr);}
+}
 .screen{display:none;flex-direction:column;min-height:100vh;}
 .screen.active{display:flex;}
+@media(min-width:1024px){
+  .screen{display:none !important;}
+  .screen.active{display:flex !important;}
+  .screen.active#scr-login{display:flex !important;align-items:center;justify-content:center;}
+}
 
 /* HEADER */
 .hdr{background:var(--surface);padding:0 16px;height:52px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;}
@@ -210,12 +348,11 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 ::-webkit-scrollbar{width:4px;}
 ::-webkit-scrollbar-track{background:var(--surface);}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+@keyframes gfPulse{0%,100%{box-shadow:0 0 0 0 rgba(224,82,82,.4)}50%{box-shadow:0 0 0 8px rgba(224,82,82,0)}}
 /* ── TUTORIAL ── */
 .tut-ov{position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.75);display:none;}
 .tut-ov.on{display:block;}
-.tut-card{position:fixed;bottom:24px;left:16px;right:16px;z-index:9001;max-width:420px;margin:0 auto;
-  background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px 20px 18px;
-  box-shadow:0 8px 40px rgba(0,0,0,.7);display:none;}
+.tut-card{position:fixed;bottom:24px;left:16px;right:16px;z-index:9001;max-width:420px;margin:0 auto;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px 20px 18px;box-shadow:0 8px 40px rgba(0,0,0,.7);display:none;}
 .tut-card.on{display:block;animation:tutIn .3s ease;}
 @keyframes tutIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 .tut-ic{font-size:44px;display:block;text-align:center;margin-bottom:10px;}
@@ -233,6 +370,22 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 </style>
 </head>
 <body>
+<!-- TOPBAR DESKTOP (fora do #app para ocupar 100% da tela) -->
+<div class="dt-topbar" id="dt-topbar" style="display:none;">
+  <div class="dt-brand"><i class="ti ti-leaf" style="font-size:20px;"></i>AGRO BASE</div>
+  <nav class="dt-nav" id="dt-nav">
+    <button class="dt-nav-btn" id="dtnav-areas" onclick="showScreen('scr-areas')"><i class="ti ti-map-2"></i>ÁREAS</button>
+    <button class="dt-nav-btn" id="dtnav-geo" onclick="showScreen('scr-geo')"><i class="ti ti-polygon"></i>ESTRUTURA</button>
+    <button class="dt-nav-btn" id="dtnav-vis" onclick="currentArea&&showScreen('scr-vistoria')"><i class="ti ti-route"></i>VISTORIA</button>
+    <button class="dt-nav-btn" id="dtnav-rep" onclick="buildReport();showScreen('scr-report')"><i class="ti ti-clipboard-text"></i>RELATÓRIO</button>
+    <button class="dt-nav-btn" id="dtnav-admin" style="display:none;" onclick="showScreen('scr-admin')"><i class="ti ti-layout-dashboard"></i>ADMIN</button>
+  </nav>
+  <div class="dt-topbar-right">
+    <div class="dt-user"><div class="dt-conn" id="dt-conn"></div><span id="dt-user-name">—</span></div>
+    <button onclick="fazerLogout()" class="btn btn-ghost" style="padding:6px 12px;font-size:12px;"><i class="ti ti-logout"></i> SAIR</button>
+  </div>
+</div>
+
 <div id="app">
 
 <!-- LOGIN -->
@@ -241,7 +394,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
     <div class="login-logo">
       <div class="login-logo-mark">AGRO<br>BASE</div>
       <div class="login-logo-line"></div>
-      <div class="login-logo-sub">FIELD · VISTORIA</div>
+      <div class="login-logo-sub">VISTORIA</div>
     </div>
     <div class="login-card">
       <h2>ENTRAR</h2>
@@ -257,29 +410,91 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
       <div class="login-err" id="login-err"></div>
     </div>
   </div>
-  <div style="text-align:center;padding-bottom:24px;font-family:var(--font-mono);font-size:15px;color:var(--text3);letter-spacing:1px;">AGRO BASE FIELD · ACESSO RESTRITO</div>
+  <div style="text-align:center;padding-bottom:24px;font-family:var(--font-mono);font-size:15px;color:var(--text3);letter-spacing:1px;">ACESSO RESTRITO</div>
 </div>
 
 <!-- ADMIN -->
 <div class="screen" id="scr-admin">
-  <div class="hdr">
+  <!-- Header mobile -->
+  <div class="hdr" id="admin-hdr-mobile">
     <div class="hdr-title">PAINEL ADMIN</div>
-    <button onclick="fazerLogout()" style="background:rgba(91,200,240,0.08);border:1px solid rgba(91,200,240,0.25);border-radius:6px;padding:6px 12px;color:var(--text2);font-family:var(--font-mono);font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;letter-spacing:.5px;"><i class="ti ti-logout" style="font-size:15px;"></i> SAIR</button>
+    <button onclick="fazerLogout()" style="background:rgba(91,200,240,0.08);border:1px solid rgba(91,200,240,0.25);border-radius:6px;padding:6px 12px;color:var(--text2);font-family:var(--font-mono);font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;"><i class="ti ti-logout"></i> SAIR</button>
   </div>
-  <div class="scroll" style="padding:12px;">
-    <!-- Botão ir ao campo -->
-    <button onclick="adminIrAoCampo()" class="btn btn-primary btn-full" style="margin-bottom:16px;font-size:16px;padding:14px;">
-      <i class="ti ti-map-pin"></i> IR AO CAMPO — CRIAR VISTORIA
-    </button>
-    <!-- Filtro por agrônomo -->
+  <!-- Desktop layout -->
+  <div class="dt-admin-layout dt-grid" id="admin-dt-layout" style="display:none;">
+    <aside class="dt-admin-sidebar">
+      <div class="dt-sidebar-logo"><div>PAINEL ADMIN</div><span id="dt-admin-user">—</span></div>
+      <div class="dt-sidebar-nav">
+        <div class="dt-sidebar-sec">GESTÃO</div>
+        <div class="dt-sidebar-item active" onclick="dtAdminSection(this,'dashboard')"><i class="ti ti-dashboard"></i>Dashboard</div>
+        <div class="dt-sidebar-item" onclick="dtAdminSection(this,'vistorias')"><i class="ti ti-route"></i>Vistorias</div>
+        <div class="dt-sidebar-item" onclick="dtAdminSection(this,'areas')"><i class="ti ti-map-2"></i>Áreas</div>
+        <div class="dt-sidebar-sec">CONTROLE</div>
+        <div class="dt-sidebar-item" onclick="dtAdminSection(this,'alertas')"><i class="ti ti-alert-triangle" style="color:var(--danger);"></i>Alertas</div>
+        <div class="dt-sidebar-sec">CAMPO</div>
+        <div class="dt-sidebar-item" onclick="adminIrAoCampo()"><i class="ti ti-map-pin"></i>Ir ao Campo</div>
+      </div>
+      <div style="padding:8px;border-top:1px solid var(--border);">
+        <div class="dt-sidebar-sec" style="padding:12px 12px 6px;">FILTRAR POR</div>
+        <div id="admin-filtros-dt" style="padding:0 8px 8px;display:flex;flex-direction:column;gap:4px;"></div>
+      </div>
+    </aside>
+    <main class="dt-admin-main" id="dt-admin-main"></main>
+  </div>
+  <!-- Mobile layout -->
+  <div class="scroll" id="admin-mobile-scroll" style="padding:12px;">
+    <button onclick="adminIrAoCampo()" class="btn btn-primary btn-full" style="margin-bottom:16px;padding:14px;font-size:16px;"><i class="ti ti-map-pin"></i> IR AO CAMPO</button>
     <div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;">FILTRAR POR USUÁRIO</div>
     <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;" id="admin-filtros"></div>
-    <!-- Áreas -->
+    <div id="admin-stats"></div>
+    <div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;">MAPA DE VISTORIAS</div>
+    <div id="admin-map" style="display:none;border-radius:8px;overflow:hidden;margin-bottom:16px;"></div>
+    <div style="font-family:var(--font-mono);font-size:11px;color:var(--danger);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;"><i class="ti ti-alert-triangle"></i> ALERTAS</div>
+    <div id="admin-geofence" class="card" style="padding:0;margin:0 0 16px;"></div>
     <div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;">ÁREAS CADASTRADAS</div>
     <div id="admin-areas" class="card" style="padding:0;margin:0 0 16px;"></div>
-    <!-- Vistorias -->
     <div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;">VISTORIAS REALIZADAS</div>
     <div id="admin-vistorias" class="card" style="padding:0;margin:0;"></div>
+  </div>
+</div>
+
+<div class="screen" id="scr-geo">
+  <div class="hdr">
+    <button class="hdr-back" onclick="showScreen('scr-areas')"><i class="ti ti-chevron-left"></i> Áreas</button>
+    <div class="hdr-title hdr-center">ESTRUTURA GEOGRÁFICA</div>
+    <div style="width:70px;"></div>
+  </div>
+  <div class="scroll">
+    <div style="position:relative;">
+      <div id="geo-map" style="width:100%;height:260px;z-index:1;background:var(--surface2);"></div>
+      <div id="geo-map-empty" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;pointer-events:none;"><i class="ti ti-map-2" style="font-size:36px;color:var(--border);"></i><span style="font-family:var(--font-mono);font-size:13px;color:var(--text3);">Faça upload do KML/KMZ</span></div>
+    </div>
+    <div id="geo-info" style="display:none;" class="card">
+      <div class="card-hd"><div class="card-hd-t"><i class="ti ti-polygon"></i> POLÍGONO DETECTADO</div></div>
+      <div class="card-bd">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;text-align:center;"><div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);">ÁREA CALC.</div><div style="font-family:var(--font-head);font-size:28px;font-weight:800;color:var(--accent);" id="geo-ha">—</div><div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);">hectares</div></div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;text-align:center;"><div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);">VÉRTICES</div><div style="font-family:var(--font-head);font-size:28px;font-weight:800;color:var(--accent);" id="geo-pts">—</div><div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);">pontos</div></div>
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;"><div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);margin-bottom:4px;">NOME NO ARQUIVO</div><div style="font-family:var(--font-head);font-size:16px;font-weight:700;" id="geo-nome-kml">—</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-hd-t"><i class="ti ti-upload"></i> UPLOAD DO TALHÃO</div></div>
+      <div class="card-bd">
+        <div id="geo-drop" onclick="document.getElementById('geo-file').click()" style="border:2px dashed var(--border);border-radius:var(--radius);padding:28px 16px;text-align:center;cursor:pointer;">
+          <i class="ti ti-file-type-xml" style="font-size:36px;color:var(--accent);display:block;margin-bottom:8px;"></i>
+          <div style="font-family:var(--font-head);font-size:18px;font-weight:700;">Selecionar arquivos</div>
+          <div style="font-family:var(--font-mono);font-size:12px;color:var(--text3);margin-top:4px;">KML ou KMZ · selecione um ou vários</div>
+        </div>
+        <input type="file" id="geo-file" accept=".kml,.kmz" style="display:none;" multiple onchange="lerKMLMultiplo(event)"/>
+        <div id="geo-status" style="font-family:var(--font-mono);font-size:13px;color:var(--text3);text-align:center;margin-top:10px;min-height:18px;"></div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="showScreen('scr-areas')" style="flex:1;">CANCELAR</button>
+      <button class="btn btn-primary" id="geo-next" onclick="irParaCadastro()" style="flex:2;" disabled><i class="ti ti-arrow-right"></i> CONTINUAR</button>
+    </div>
   </div>
 </div>
 
@@ -287,7 +502,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 <div class="screen" id="scr-areas">
   <div class="hero">
     <button onclick="fazerLogout()" style="position:absolute;top:14px;right:14px;background:rgba(91,200,240,0.08);border:1px solid rgba(91,200,240,0.25);border-radius:6px;padding:6px 12px;color:#7EC4E0;font-family:var(--font-mono);font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;z-index:10;letter-spacing:.5px;"><i class="ti ti-logout" style="font-size:15px;"></i> SAIR</button>
-    <div class="hero-eye">AGRO BASE Field</div>
+    <div class="hero-eye">AGRO BASE</div>
     <div class="hero-h">VISTORIA<br>DE CAMPO</div>
     <div class="hero-sub">RASTREAMENTO · PONTOS · KML · RELATÓRIO</div>
     <div class="hero-stats">
@@ -302,7 +517,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
       <div id="btn-painel-wrap" style="display:none;">
         <button onclick="showScreen('scr-admin')" class="btn btn-ghost" style="padding:8px 14px;font-size:14px;"><i class="ti ti-layout-dashboard"></i> PAINEL</button>
       </div>
-      <button class="btn btn-primary" style="padding:8px 14px;font-size:16px;" onclick="showScreen('scr-nova-area')"><i class="ti ti-plus"></i> NOVA ÁREA</button>
+      <button class="btn btn-primary" style="padding:8px 14px;font-size:16px;" onclick="showScreen('scr-geo')"><i class="ti ti-plus"></i> NOVA ÁREA</button>
     </div>
   </div>
   <div id="areas-empty" class="empty" style="display:none;"><i class="ti ti-map-off"></i><div class="empty-t">Nenhuma área ainda</div><div class="empty-s">Cadastre sua primeira área para começar</div></div>
@@ -323,6 +538,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
         <div class="field"><label>Nome do talhão *</label><input id="f-nome" placeholder="Ex: Talhão A2 — Fundos"/></div>
         <div class="field"><label>Fazenda / Produtor</label><input id="f-fazenda" placeholder="Ex: Fazenda Santa Fé"/></div>
         <div class="field"><label>Município</label><input id="f-municipio" placeholder="Ex: Vacaria — RS"/></div>
+        <div class="field" id="f-responsavel-wrap" style="display:none;">
+          <label>Responsável pela vistoria</label>
+          <select id="f-responsavel">
+            <option value="">— Selecione o agrônomo —</option>
+          </select>
+        </div>
       </div>
     </div>
     <div class="card">
@@ -367,35 +588,73 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 
 <!-- VISTORIA -->
 <div class="screen" id="scr-vistoria">
+  <!-- Header mobile -->
   <div class="hdr" style="background:var(--surface);border-color:var(--border);">
     <button class="hdr-back" onclick="confirmarSaida()"><i class="ti ti-chevron-left"></i> Áreas</button>
     <div class="hdr-title hdr-center" id="vis-title">VISTORIA</div>
     <span style="font-family:var(--font-mono);font-size:15px;background:rgba(91,200,240,0.12);color:var(--accent);padding:3px 10px;border-radius:12px;border:1px solid rgba(91,200,240,0.3);white-space:nowrap;" id="vis-badge">0 pts</span>
   </div>
-  <div id="map-wrap">
-    <div id="leaflet-map"></div>
-    <div class="gps-pill"><span class="sdot idle" id="sdot"></span><span id="gps-txt">GPS</span></div>
-    <div class="map-pill"><div class="sdot idle" id="sdot2"></div><span id="stext">Pronto para iniciar</span></div>
+  <!-- Desktop split layout -->
+  <div class="dt-vis-layout dt-grid" id="vis-dt-layout" style="display:none;">
+    <div id="map-wrap" style="position:relative;">
+      <div id="leaflet-map" style="width:100%;height:100%;"></div>
+      <div class="gps-pill"><span class="sdot idle" id="sdot"></span><span id="gps-txt">GPS</span></div>
+      <div class="map-pill"><div class="sdot idle" id="sdot2"></div><span id="stext">Pronto para iniciar</span></div>
+      <div id="geo-fence-badge" style="display:none;position:absolute;top:12px;left:12px;background:#E05252;border-radius:6px;padding:5px 11px;font-family:var(--font-mono);font-size:12px;color:#fff;align-items:center;gap:6px;z-index:10;animation:gfPulse 2s infinite;"><i class="ti ti-alert-triangle"></i> FORA DA ÁREA</div>
+    </div>
+    <div class="dt-vis-panel">
+      <div class="dt-vis-hd">
+        <div class="dt-vis-hd-title" id="vis-title-dt">VISTORIA</div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary" id="btn-track-dt" onclick="toggleTracking()" style="flex:1;"><i class="ti ti-player-play" id="track-icon-dt"></i><span id="track-lbl-dt">Iniciar</span></button>
+          <button class="btn btn-ghost" id="btn-ponto-dt" onclick="showModalPonto()" disabled style="width:44px;padding:10px 0;"><i class="ti ti-map-pin" style="font-size:18px;"></i></button>
+        </div>
+      </div>
+      <div class="dt-vis-stats">
+        <div class="dt-vis-stat"><div class="v" id="sv-dist">0.000</div><div class="l">km</div></div>
+        <div class="dt-vis-stat"><div class="v" id="sv-time">00:00</div><div class="l">tempo</div></div>
+        <div class="dt-vis-stat"><div class="v" id="sv-pts">0</div><div class="l">pts GPS</div></div>
+      </div>
+      <div class="dt-vis-pts">
+        <div class="pontos-lbl" style="padding:10px 16px 4px;">Pontos marcados</div>
+        <div id="pontos-list"></div>
+      </div>
+    </div>
+    <div class="dt-vis-footer">
+      <button class="btn btn-ghost" onclick="exportKML()" style="flex:1;"><i class="ti ti-download"></i> KML</button>
+      <button class="btn btn-ghost" onclick="exportTXT()" style="flex:1;"><i class="ti ti-file-text"></i> TXT</button>
+      <button class="btn btn-ghost" onclick="buildReport();showScreen('scr-report')" style="flex:1;"><i class="ti ti-clipboard-text"></i> Relatório</button>
+      <button class="btn btn-red" onclick="finalizarVistoria()" style="flex:1;"><i class="ti ti-flag-3"></i> Finalizar</button>
+    </div>
   </div>
-  <div class="stats-row">
-    <div class="stat-card"><div class="stat-l">Distância</div><div class="stat-v" id="sv-dist">0.00</div><div class="stat-u">km</div></div>
-    <div class="stat-card"><div class="stat-l">Tempo</div><div class="stat-v" id="sv-time">00:00</div><div class="stat-u">h : min</div></div>
-  </div>
-  <div class="ctrl-row">
-    <button class="btn btn-primary" id="btn-track" onclick="toggleTracking()" style="flex:2;"><i class="ti ti-player-play" id="track-icon"></i><span id="track-lbl">Iniciar</span></button>
-    <button class="btn btn-ghost btn-sq" id="btn-ponto" onclick="showModalPonto()" disabled><i class="ti ti-map-pin" style="font-size:20px;"></i></button>
-    <button class="btn btn-ghost btn-sq" onclick="buildReport();showScreen('scr-report')"><i class="ti ti-clipboard-text" style="font-size:20px;"></i></button>
-  </div>
-  <div class="pontos-wrap">
-    <div class="pontos-lbl">Pontos marcados</div>
-    <div id="pontos-list"></div>
-  </div>
-  <div class="bot-bar">
-    <button class="btn btn-ghost" onclick="exportKML()"><i class="ti ti-download"></i> KML</button>
-    <button class="btn btn-ghost" onclick="exportTXT()"><i class="ti ti-file-text"></i> TXT</button>
-    <button class="btn btn-red" onclick="finalizarVistoria()"><i class="ti ti-flag-3"></i> Finalizar</button>
+  <!-- Mobile layout (inalterado) -->
+  <div id="vis-mobile-layout">
+    <div id="map-wrap-mobile" style="position:relative;flex-shrink:0;">
+      <div id="leaflet-map-mobile" style="width:100%;height:300px;"></div>
+      <div class="gps-pill" style="display:none;"><span class="sdot idle" id="sdot-m"></span><span id="gps-txt-m">GPS</span></div>
+      <div class="map-pill" style="display:none;"><div class="sdot idle" id="sdot2-m"></div><span id="stext-m">Pronto</span></div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-l">Distância</div><div class="stat-v" id="sv-dist-m">0.000</div><div class="stat-u">km</div></div>
+      <div class="stat-card"><div class="stat-l">Tempo</div><div class="stat-v" id="sv-time-m">00:00</div><div class="stat-u">h:min</div></div>
+    </div>
+    <div class="ctrl-row">
+      <button class="btn btn-primary" id="btn-track" onclick="toggleTracking()" style="flex:2;"><i class="ti ti-player-play" id="track-icon"></i><span id="track-lbl">Iniciar</span></button>
+      <button class="btn btn-ghost btn-sq" id="btn-ponto" onclick="showModalPonto()" disabled><i class="ti ti-map-pin" style="font-size:20px;"></i></button>
+      <button class="btn btn-ghost btn-sq" onclick="buildReport();showScreen('scr-report')"><i class="ti ti-clipboard-text" style="font-size:20px;"></i></button>
+    </div>
+    <div class="pontos-wrap">
+      <div class="pontos-lbl">Pontos marcados</div>
+      <div id="pontos-list-mobile"></div>
+    </div>
+    <div class="bot-bar">
+      <button class="btn btn-ghost" onclick="exportKML()"><i class="ti ti-download"></i> KML</button>
+      <button class="btn btn-ghost" onclick="exportTXT()"><i class="ti ti-file-text"></i> TXT</button>
+      <button class="btn btn-red" onclick="finalizarVistoria()"><i class="ti ti-flag-3"></i> Finalizar</button>
+    </div>
   </div>
 </div>
+
 
 <!-- RELATORIO -->
 <div class="screen" id="scr-report">
@@ -534,7 +793,6 @@ window._fsDeleteDoc = deleteDoc;
 // Dispara evento quando Firebase estiver pronto
 window.dispatchEvent(new Event('firebase-ready'));
 </script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 let areas=[];
 let stats={vis:0,km:0};
@@ -547,20 +805,20 @@ let currentUser=null; // {user, role:'admin'|'agronomo', nome}
 // ── USUÁRIOS ─────────────────────────────────────────
 // Cadastro local de usuários (admin gerencia)
 const USERS=[
-  {user:"admin",  pass:"1234",  role:"admin",    nome:"Administrador"},
-  {user:"agro1",  pass:"1234",  role:"agronomo", nome:"Agrônomo 1"},
-  {user:"agro2",  pass:"1234",  role:"agronomo", nome:"Agrônomo 2"},
-  {user:"ruan",   pass:"scv",   role:"agronomo", nome:"Ruan"},
+  {user:"admin",   pass:"1234",  role:"admin",    nome:"Administrador"},
+  {user:"ruan",    pass:"scv",   role:"agronomo", nome:"Ruan"},
+  {user:"joelmar", pass:"scv26", role:"agronomo", nome:"Joelmar"},
 ];
 
 // ── LOGIN ────────────────────────────────────────────
 function fazerLogout(){
-  if(!confirm("Sair do AGRO BASE Field?"))return;
+  if(!confirm("Sair do AGRO BASE?"))return;
   sessionStorage.removeItem("abf_auth");
   currentUser=null;areas=[];
   document.getElementById("l-user").value="";
   document.getElementById("l-pass").value="";
   document.getElementById("login-err").textContent="";
+  const tb=document.getElementById("dt-topbar");if(tb)tb.style.display="none";
   showScreen("scr-login");
 }
 function doLogin(){
@@ -574,6 +832,13 @@ function doLogin(){
     sessionStorage.setItem("abf_auth", JSON.stringify(ok));
     if(ok.role==="admin") showScreen("scr-admin");
     else { carregarAreasUsuario(); showScreen("scr-areas"); }
+    // setup desktop
+    if(window.innerWidth>=1024){
+      setTimeout(()=>{
+        dtSetup();
+        if(ok.role!=="admin"){dtMontarAreasLayout();dtRenderAreas();}
+      },300);
+    }
     setTimeout(()=>tutVerificarPrimeiroAcesso(ok.user), 900);
   } else {
     err.textContent="Usuário ou senha incorretos.";
@@ -588,9 +853,20 @@ function togglePass(){
 }
 document.addEventListener("keydown",e=>{if(e.key==="Enter"&&document.getElementById("scr-login").classList.contains("active"))doLogin();});
 // verifica sessão ao carregar
+// Topbar sempre oculta ao iniciar — só aparece após login
+const _tbInit=document.getElementById("dt-topbar");
+if(_tbInit)_tbInit.style.display="none";
+
 const _savedUser=sessionStorage.getItem("abf_auth");
 if(_savedUser){
-  try{currentUser=JSON.parse(_savedUser);if(currentUser.role==="admin")showScreen("scr-admin");else{carregarAreasUsuario();showScreen("scr-areas");}}catch(e){}
+  try{
+    currentUser=JSON.parse(_savedUser);
+    if(currentUser.role==="admin") showScreen("scr-admin");
+    else{carregarAreasUsuario();showScreen("scr-areas");}
+    if(window.innerWidth>=1024){
+      setTimeout(()=>{dtSetup();dtMontarAreasLayout();dtRenderAreas();},400);
+    }
+  }catch(e){}
 }
 
 // ── FIREBASE HELPERS ─────────────────────────────────
@@ -623,104 +899,245 @@ async function dbCarregarVistorias(userFilter){
 }
 
 async function carregarAreasUsuario(){
-  // mostra botão painel só para admin
-  const painelWrap=document.getElementById("btn-painel-wrap");
-  if(painelWrap) painelWrap.style.display=currentUser?.role==="admin"?"block":"none";
-  const saved = localStorage.getItem("ct_areas_"+currentUser.user);
-  areas = saved ? JSON.parse(saved) : [];
-  // tenta sincronizar com Firebase
-  if(window._fbReady){
-    try{
-      const remote = await dbCarregarAreas(currentUser.user);
-      if(remote.length) areas=remote;
-    }catch(e){}
-  }
+  if(idb){const local=await idbGetAll("areas").catch(()=>[]);const f=local.filter(a=>a.owner===currentUser.user);if(f.length){areas=f;renderAreas();}}
+  if(!areas.length){const s=localStorage.getItem("ct_areas_"+currentUser.user);if(s)try{areas=JSON.parse(s);}catch(e){}}
+  if(isOnline&&window._db){try{const r=await dbCarregarAreas(currentUser.user);if(r.length){areas=r;renderAreas();}}catch(e){}}
   const s=localStorage.getItem("ct_stats_"+currentUser.user);
   stats=s?JSON.parse(s):{vis:0,km:0};
   renderAreas();
 }
 function salvarAreasLocal(){
-  localStorage.setItem("ct_areas_"+currentUser.user, JSON.stringify(areas));
-  localStorage.setItem("ct_stats_"+currentUser.user, JSON.stringify(stats));
+  localStorage.setItem("ct_areas_"+currentUser.user,JSON.stringify(areas));
+  localStorage.setItem("ct_stats_"+currentUser.user,JSON.stringify(stats));
+  if(idb)areas.forEach(a=>idbPut("areas",{...a,owner:currentUser.user}).catch(()=>{}));
 }
 
 
-let lmap=null, lPolyline=null, lMarkers=[], lPosMarker=null, lCircle=null;
-const DEFAULT_CENTER=[-28.51,-50.87]; // Vacaria RS
+let lmap=null,lPolyline=null,lMarkers=[],lPosMarker=null;
+const DEFAULT_CENTER=[-28.51,-50.87];
+
+// ── TILES COM FALLBACK OSM ────────────────────────────
+function addSatTiles(map){
+  if(typeof L==="undefined")return;
+  const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,crossOrigin:true}).addTo(map);
+  const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:20,crossOrigin:true,opacity:0});
+  const lbl=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',{maxZoom:20,crossOrigin:true,opacity:0});
+  const img=new Image();img.crossOrigin="anonymous";
+  img.onload=()=>{sat.addTo(map);sat.setOpacity(1);lbl.addTo(map);lbl.setOpacity(0.8);setTimeout(()=>map.removeLayer(osm),200);};
+  img.src='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/8/96/78?t='+Date.now();
+}
 
 function initMap(){
-  if(lmap) return;
-  lmap = L.map('leaflet-map', {
-    center: DEFAULT_CENTER, zoom: 16,
-    zoomControl: true, attributionControl: true
-  });
-
-  // Satélite Esri (gratuito, sem API key)
-  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    attribution: 'Tiles © Esri &mdash; Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP',
-    maxZoom: 20
-  }).addTo(lmap);
-
-  // Labels por cima do satélite
-  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
-    maxZoom: 20, opacity: 0.7
-  }).addTo(lmap);
-
-  lPolyline = L.polyline([], {color:'#00C96B', weight:4, opacity:0.9}).addTo(lmap);
+  if(lmap)return;
+  const el=document.getElementById("leaflet-map");
+  if(!el||typeof L==="undefined")return;
+  lmap=L.map(el,{center:DEFAULT_CENTER,zoom:14,zoomControl:true,attributionControl:false});
+  addSatTiles(lmap);
+  lPolyline=L.polyline([],{color:"#5BC8F0",weight:4,opacity:0.9}).addTo(lmap);
 }
 
-function mapAddPoint(lat, lng){
-  lPolyline.addLatLng([lat,lng]);
-  // atualiza marcador de posição atual
-  if(!lPosMarker){
-    const posIcon = L.divIcon({className:'', html:`
-      <div style="width:18px;height:18px;border-radius:50%;background:#00C96B;border:3px solid #fff;box-shadow:0 0 0 4px rgba(0,201,107,0.3);"></div>
-    `, iconSize:[18,18], iconAnchor:[9,9]});
-    lPosMarker = L.marker([lat,lng], {icon:posIcon, zIndexOffset:1000}).addTo(lmap);
-  } else {
-    lPosMarker.setLatLng([lat,lng]);
-  }
-  // centraliza suavemente
-  lmap.panTo([lat,lng], {animate:true, duration:0.5});
+function mapAddPoint(lat,lng){
+  if(!lmap)return;
+  if(lPolyline)lPolyline.addLatLng([lat,lng]);
+  if(lPosMarker)lPosMarker.setLatLng([lat,lng]);
+  else{lPosMarker=L.circleMarker([lat,lng],{radius:8,color:"#fff",fillColor:"#5BC8F0",fillOpacity:1,weight:2.5}).addTo(lmap);}
+  lmap.panTo([lat,lng],{animate:true,duration:0.5});
 }
 
-function mapAddPontoMarker(ponto, idx){
-  const color = ptColor(ponto.tipo);
-  const icon = L.divIcon({
-    className:'',
-    html:`<div style="width:30px;height:30px;border-radius:50%;background:${color};border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;font-family:Figtree,sans-serif;">${idx+1}</div>`,
-    iconSize:[30,30], iconAnchor:[15,15]
-  });
-  const lat = ponto.gps ? ponto.gps.lat : DEFAULT_CENTER[0];
-  const lng = ponto.gps ? ponto.gps.lng : DEFAULT_CENTER[1];
-  const m = L.marker([lat,lng], {icon}).addTo(lmap);
-  m.bindPopup(`<b>${TI[ponto.tipo]||''} ${ponto.titulo}</b>${ponto.obs?'<br>'+ponto.obs:''}<br><small>${TL[ponto.tipo]} · ${ponto.time} · ${ponto.dist}km</small>`);
-  lMarkers.push(m);
+function mapAddPontoMarker(ponto,idx){
+  if(!ponto.gps||!lmap)return;
+  const color=ptColor(ponto.tipo);
+  const icon=L.divIcon({className:"",html:`<div style="width:30px;height:30px;border-radius:50%;background:${color};border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#fff;">${idx+1}</div>`,iconSize:[30,30],iconAnchor:[15,15]});
+  const acc=ponto.gps.acc?`±${Math.round(ponto.gps.acc)}m`:"—";
+  const fotos=ponto.fotos?.filter(f=>f.data)?.length||0;
+  const popup=`<div style="font-family:'Barlow Condensed',sans-serif;min-width:160px;"><b style="font-size:15px;">${idx+1}. ${ponto.titulo}</b><br><span style="font-size:12px;color:#666;">${TL[ponto.tipo]}</span><br><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;">📍 ${ponto.gps.lat.toFixed(6)}, ${ponto.gps.lng.toFixed(6)}<br>🎯 ${acc} · 📸 ${fotos} foto${fotos!==1?"s":""}</span>${ponto.obs?`<br><small>💬 ${ponto.obs.slice(0,60)}</small>`:""}</div>`;
+  const m=L.marker([ponto.gps.lat,ponto.gps.lng],{icon}).addTo(lmap);
+  m.bindPopup(popup,{maxWidth:220});lMarkers.push(m);
 }
 
 function mapClear(){
-  if(!lmap) return;
-  if(lPolyline) lPolyline.setLatLngs([]);
-  lMarkers.forEach(m=>lmap.removeLayer(m)); lMarkers=[];
+  if(!lmap)return;
+  if(lPolyline)lPolyline.setLatLngs([]);
+  lMarkers.forEach(m=>lmap.removeLayer(m));lMarkers=[];
   if(lPosMarker){lmap.removeLayer(lPosMarker);lPosMarker=null;}
-  lmap.setView(DEFAULT_CENTER, 16);
+  if(window._talhaoPoly){lmap.removeLayer(window._talhaoPoly);window._talhaoPoly=null;}
+  if(currentArea?.poligono?.length>2){
+    const lls=currentArea.poligono.map(c=>[c.lat,c.lng]);
+    window._talhaoPoly=L.polygon(lls,{color:"#5BC8F0",weight:2,opacity:0.7,fillColor:"#5BC8F0",fillOpacity:0.08,dashArray:"6,4"}).addTo(lmap);
+    lmap.fitBounds(window._talhaoPoly.getBounds(),{padding:[40,40],maxZoom:18});
+  } else {
+    lmap.setView(lastGPSPos?[lastGPSPos.lat,lastGPSPos.lng]:DEFAULT_CENTER,14);
+  }
 }
 
-function resizeCanvas(){ if(lmap) setTimeout(()=>lmap.invalidateSize(),100); }
-function drawMap(){ /* substituído pelo Leaflet */ }
+function resizeCanvas(){if(lmap)setTimeout(()=>lmap.invalidateSize(),100);}
+function drawMap(){}
+
+// ── GEOFENCE ─────────────────────────────────────────
+let geofenceAtivo=false,geofenceAlertado=false;
+
+function pontoDentro(lat,lng,poly){
+  if(!poly||poly.length<3)return true;
+  let dentro=false;const n=poly.length;
+  for(let i=0,j=n-1;i<n;j=i++){
+    const xi=poly[i].lng,yi=poly[i].lat,xj=poly[j].lng,yj=poly[j].lat;
+    if(((yi>lat)!==(yj>lat))&&(lng<(xj-xi)*(lat-yi)/(yj-yi)+xi))dentro=!dentro;
+  }
+  return dentro;
+}
+
+function verificarGeofence(lat,lng){
+  if(!currentArea?.poligono?.length)return;
+  const dentro=pontoDentro(lat,lng,currentArea.poligono);
+  const badge=document.getElementById("geo-fence-badge");
+  if(dentro){geofenceAlertado=false;if(badge)badge.style.display="none";}
+  else{
+    if(badge)badge.style.display="flex";
+    if(!geofenceAlertado&&tracking){
+      geofenceAlertado=true;
+      if(navigator.vibrate)navigator.vibrate([300,100,300,100,300]);
+      mostrarToast("⚠️ Você saiu da área do talhão!","#E05252");
+    }
+  }
+}
+
+function mostrarToast(msg,cor){
+  let t=document.getElementById("toast-geral");
+  if(!t){t=document.createElement("div");t.id="toast-geral";t.style.cssText="position:fixed;top:70px;left:50%;transform:translateX(-50%);padding:12px 20px;border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:14px;z-index:9500;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.5);transition:opacity .3s;white-space:nowrap;";document.body.appendChild(t);}
+  t.textContent=msg;t.style.background=cor||"var(--accent)";t.style.color=cor&&cor!=="#5BC8F0"?"#fff":"#071826";t.style.opacity="1";
+  clearTimeout(t._t);t._t=setTimeout(()=>t.style.opacity="0",3500);
+}
+
+async function verificarPosicaoParaIniciar(){
+  const poly=currentArea?.poligono;
+  if(!poly||poly.length<3){geofenceAtivo=false;startTracking();return;}
+  const stEl=document.getElementById("stext");if(stEl)stEl.textContent="Verificando posição...";
+  try{
+    const pos=await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{enableHighAccuracy:true,timeout:10000}));
+    if(pontoDentro(pos.coords.latitude,pos.coords.longitude,poly)){geofenceAtivo=true;geofenceAlertado=false;startTracking();}
+    else mostrarModalForaDeArea();
+  }catch(e){geofenceAtivo=false;startTracking();}
+}
+
+function mostrarModalForaDeArea(){
+  let m=document.getElementById("modal-fora");
+  if(!m){
+    m=document.createElement("div");m.id="modal-fora";
+    m.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9400;display:flex;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(4px);";
+    m.innerHTML=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px 24px;max-width:340px;width:100%;text-align:center;"><div style="font-size:44px;margin-bottom:10px;">🚫</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;margin-bottom:8px;">FORA DO TALHÃO</div><div style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--text3);margin-bottom:20px;line-height:1.6;">Você está fora da área cadastrada.<br>Vá até o talhão para iniciar.</div><div style="display:flex;gap:10px;"><button onclick="document.getElementById('modal-fora').style.display='none'" class="btn btn-ghost" style="flex:1;">FECHAR</button><button onclick="ignorarGeofenceIniciar()" class="btn" style="flex:1;background:none;border:1px solid var(--accent2);color:var(--accent2);">INICIAR MESMO ASSIM</button></div></div>`;
+    document.body.appendChild(m);
+  }
+  m.style.display="flex";
+}
+
+async function ignorarGeofenceIniciar(){
+  document.getElementById("modal-fora").style.display="none";
+  geofenceAtivo=false;
+  try{
+    const log={id:Date.now(),tipo:"geofence_ignorado",owner:currentUser?.user,nomeOwner:currentUser?.nome,area:currentArea?.nome||"—",fazenda:currentArea?.fazenda||"—",data:new Date().toLocaleDateString("pt-BR"),hora:new Date().toLocaleTimeString("pt-BR"),dataISO:new Date().toISOString(),gps:lastGPSPos||null};
+    if(window._db)await window._fsSetDoc(window._fsDoc(window._db,"logs_geofence",log.id.toString()),log);
+  }catch(e){}
+  startTracking();
+}
 function toggleChip(el){el.classList.toggle("sel");}
 function getChips(){return[...document.querySelectorAll("#obj-chips .chip.sel")].map(c=>c.textContent);}
 function updateSplash(){document.getElementById("ss-areas").textContent=areas.length;document.getElementById("ss-vis").textContent=stats.vis;document.getElementById("ss-km").textContent=stats.km.toFixed(1);}
 const CICONS={Soja:"🌱",Milho:"🌽",Trigo:"🌾",Feijão:"🫘",Canola:"🌼",Aveia:"🌿",Sorgo:"🍀",Girassol:"🌻","":"🌿"};
-function renderAreas(){updateSplash();const list=document.getElementById("areas-list"),empty=document.getElementById("areas-empty"),card=document.getElementById("areas-card");if(!areas.length){empty.style.display="block";card.style.display="none";list.innerHTML="";return;}empty.style.display="none";card.style.display="block";list.innerHTML=areas.map((a,i)=>`<div class="area-item" onclick="abrirVistoria(${i})"><div class="area-icon">${CICONS[a.cultura]||"🌿"}</div><div style="flex:1;min-width:0;"><div class="area-name">${a.nome}</div><div class="area-sub">${[a.cultura,a.cultivar,a.ha?a.ha+" ha":"",a.safra].filter(Boolean).join(" · ")}</div>${a.estadio?`<div class="area-sub2">${a.estadio}${a.municipio?" · "+a.municipio:""}</div>`:""}</div><i class="ti ti-chevron-right area-arr"></i></div>`).join("")+`<div style="padding:12px 16px;"><button onclick="limparAreas()" style="width:100%;padding:10px;background:none;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-weight:600;color:var(--text3);cursor:pointer;font-family:var(--font-mono);letter-spacing:.5px;"><i class="ti ti-trash" style="font-size:14px;vertical-align:-2px;"></i> LIMPAR ÁREAS</button></div>`;}
+function renderAreas(){updateSplash();const list=document.getElementById("areas-list"),empty=document.getElementById("areas-empty"),card=document.getElementById("areas-card");if(!areas.length){empty.style.display="block";card.style.display="none";list.innerHTML="";return;}empty.style.display="none";card.style.display="block";list.innerHTML=areas.map((a,i)=>`<div class="area-item" onclick="abrirVistoria(${i})"><div class="area-icon">${CICONS[a.cultura]||"🌿"}</div><div style="flex:1;min-width:0;"><div class="area-name">${a.nome}</div><div class="area-sub">${[a.cultura,a.cultivar,a.ha?a.ha+" ha":"",a.safra].filter(Boolean).join(" · ")}</div>${a.estadio?`<div class="area-sub2">${a.estadio}${a.municipio?" · "+a.municipio:""}</div>`:""}</div><button onclick="confirmarExcluirArea(${i},event)" style="background:none;border:none;padding:8px;cursor:pointer;color:var(--danger);opacity:.7;flex-shrink:0;"><i class="ti ti-trash" style="font-size:18px;"></i></button></div>`).join("")+`<div style="padding:12px 16px;"><button onclick="limparAreas()" style="width:100%;padding:10px;background:none;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-weight:600;color:var(--text3);cursor:pointer;font-family:var(--font-mono);letter-spacing:.5px;"><i class="ti ti-trash" style="font-size:14px;vertical-align:-2px;"></i> LIMPAR TODAS</button></div>`;
+  if(window.innerWidth>=1024)setTimeout(dtRenderAreas,50);
+}
 function g(id){const e=document.getElementById(id);return e?e.value.trim():"";}
-async function salvarArea(){const nome=g("f-nome");if(!nome){alert("Informe o nome da área.");return;}const a={nome,fazenda:g("f-fazenda"),municipio:g("f-municipio"),safra:g("f-safra"),cultura:g("f-cultura"),cultivar:g("f-cultivar"),ha:g("f-ha"),estadio:g("f-estadio"),pop:g("f-pop"),semeadura:g("f-semeadura"),objetivos:getChips(),obs:g("f-obs"),data:new Date().toLocaleDateString("pt-BR"),id:Date.now()};areas.push(a);salvarAreasLocal();try{await dbSalvarArea(a);}catch(e){console.warn("Firebase offline");}["f-nome","f-fazenda","f-municipio","f-cultivar","f-ha","f-pop","f-semeadura","f-obs"].forEach(id=>document.getElementById(id).value="");document.getElementById("f-cultura").value="";document.getElementById("f-estadio").value="";document.querySelectorAll("#obj-chips .chip.sel").forEach(c=>c.classList.remove("sel"));currentArea=a;resetVistoria();showScreen("scr-vistoria");}
+async function salvarArea(){
+  const nome=g("f-nome");if(!nome){alert("Informe o nome da área.");return;}
+  // owner: se admin atribuiu responsável, usa esse; senão usa o próprio usuário
+  const responsavel=document.getElementById("f-responsavel")?.value;
+  const ownerUser = (currentUser?.role==="admin" && responsavel) ? responsavel : currentUser?.user;
+  const ownerNome = USERS.find(u=>u.user===ownerUser)?.nome || ownerUser;
+  const a={nome,fazenda:g("f-fazenda"),municipio:g("f-municipio"),safra:g("f-safra"),cultura:g("f-cultura"),cultivar:g("f-cultivar"),ha:g("f-ha")||geoPoligono?.haCalc||"",estadio:g("f-estadio"),pop:g("f-pop"),semeadura:g("f-semeadura"),objetivos:getChips(),obs:g("f-obs"),data:new Date().toLocaleDateString("pt-BR"),id:Date.now(),poligono:geoPoligono?geoPoligono.coords:null,owner:ownerUser,ownerNome};
+  // se admin atribuiu para outro, salva no Firebase mas não adiciona na lista local
+  if(currentUser?.role==="admin" && responsavel && responsavel!==currentUser.user){
+    try{await dbSalvarArea(a);}catch(e){console.warn("Firebase offline");}
+    mostrarToast(`✓ Área "${nome}" atribuída a ${ownerNome}`);
+    // limpa formulário
+    ["f-nome","f-fazenda","f-municipio","f-cultivar","f-ha","f-pop","f-semeadura","f-obs"].forEach(id=>document.getElementById(id).value="");
+    document.getElementById("f-cultura").value="";document.getElementById("f-estadio").value="";
+    document.querySelectorAll("#obj-chips .chip.sel").forEach(c=>c.classList.remove("sel"));
+    const sel=document.getElementById("f-responsavel");if(sel)sel.value="";
+    geoPoligono=null;
+    showScreen("scr-areas");
+    return;
+  }
+  // caso normal: salva para si mesmo
+  areas.push(a);salvarAreasLocal();
+  try{await dbSalvarArea(a);}catch(e){console.warn("Firebase offline");}
+  ["f-nome","f-fazenda","f-municipio","f-cultivar","f-ha","f-pop","f-semeadura","f-obs"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("f-cultura").value="";document.getElementById("f-estadio").value="";
+  document.querySelectorAll("#obj-chips .chip.sel").forEach(c=>c.classList.remove("sel"));
+  geoPoligono=null;currentArea=a;resetVistoria();showScreen("scr-vistoria");
+}
 function abrirVistoria(i){currentArea=areas[i];resetVistoria();showScreen("scr-vistoria");}
-function resetVistoria(){tracking=false;paused=false;clearInterval(timerInt);clearInterval(simInt);if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;}gpsPath=[];pontos=[];fotos=[];totalDist=0;startTime=null;pausedMs=0;lastGPSPos=null;mapBounds=null;useGPS=false;document.getElementById("sv-dist").textContent="0.00";document.getElementById("sv-time").textContent="00:00";["sdot","sdot2"].forEach(id=>document.getElementById(id).className="sdot idle");document.getElementById("stext").textContent="Pronto para iniciar";document.getElementById("track-icon").className="ti ti-player-play";document.getElementById("track-lbl").textContent="Iniciar";document.getElementById("btn-track").className="btn btn-primary";document.getElementById("btn-ponto").disabled=true;document.getElementById("vis-title").textContent=currentArea?currentArea.nome:"Vistoria";document.getElementById("vis-badge").textContent="0 pts";document.getElementById("gps-txt").textContent="GPS";renderPontos();setTimeout(()=>{initMap();mapClear();lmap.invalidateSize();},120);}
+function resetVistoria(){
+  tracking=false;paused=false;clearInterval(timerInt);
+  if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;}
+  gpsPath=[];pontos=[];fotos=[];totalDist=0;startTime=null;pausedMs=0;
+  lastGPSPos=null;mapBounds=null;useGPS=false;geofenceAtivo=false;geofenceAlertado=false;
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  const cls=(id,v)=>{const e=document.getElementById(id);if(e)e.className=v;};
+  set("sv-dist","0.000");set("sv-time","00:00");set("sv-pts","0");
+  cls("sdot","sdot idle");cls("sdot2","sdot idle");
+  set("stext","Pronto para iniciar");set("gps-txt","GPS");
+  set("vis-title",currentArea?.nome||"Vistoria");set("vis-badge","0 pts");
+  const bt=document.getElementById("btn-track");if(bt){bt.className="btn btn-primary";bt.disabled=false;}
+  const ic=document.getElementById("track-icon");if(ic)ic.className="ti ti-player-play";
+  const lb=document.getElementById("track-lbl");if(lb)lb.textContent="Iniciar";
+  const bp=document.getElementById("btn-ponto");if(bp)bp.disabled=true;
+  renderPontos();
+  setTimeout(()=>{lmap=null;initMap();if(lmap){mapClear();setTimeout(()=>lmap.invalidateSize(),80);}},80);
+}
 function ptColor(t){return{observacao:"#0A84FF",cultivar:"#00C96B",praga:"#FF6B35",doenca:"#FF9F0A",invasora:"#30D158",solo:"#8E8E93",agua:"#5AC8FA",stand:"#64D2FF",producao:"#BF5AF2",adubacao:"#FFD60A",outro:"#636366"}[t]||"#636366";}
 function pad(n){return n.toString().padStart(2,"0");}
-function toggleTracking(){!tracking?startTracking():pauseTracking();}
-function startTracking(){tracking=true;paused=false;startTime=Date.now()-pausedMs;document.getElementById("btn-track").className="btn btn-red";document.getElementById("track-icon").className="ti ti-player-pause";document.getElementById("track-lbl").textContent="Pausar";["sdot","sdot2"].forEach(id=>document.getElementById(id).className="sdot rec");document.getElementById("stext").textContent="Rastreando...";document.getElementById("btn-ponto").disabled=false;timerInt=setInterval(()=>{const el=Date.now()-startTime;document.getElementById("sv-time").textContent=pad(Math.floor(el/60000))+":"+pad(Math.floor((el%60000)/1000));},1000);
+function toggleTracking(){
+  if(!tracking){
+    if(currentArea?.poligono?.length>=3&&navigator.geolocation)verificarPosicaoParaIniciar();
+    else{geofenceAtivo=false;startTracking();}
+  } else pauseTracking();
+}
+function startTracking(){
+  tracking=true;paused=false;startTime=Date.now()-pausedMs;useGPS=false;
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  const cls=(id,v)=>{const e=document.getElementById(id);if(e)e.className=v;};
+  const bt=document.getElementById("btn-track");if(bt)bt.className="btn btn-red";
+  const ic=document.getElementById("track-icon");if(ic)ic.className="ti ti-player-pause";
+  const lb=document.getElementById("track-lbl");if(lb)lb.textContent="Pausar";
+  cls("sdot","sdot rec");cls("sdot2","sdot rec");
+  const bp=document.getElementById("btn-ponto");if(bp)bp.disabled=false;
+  set("stext","Aguardando GPS...");
+  timerInt=setInterval(()=>{
+    const el=Date.now()-startTime;
+    const m=Math.floor(el/60000),s=Math.floor((el%60000)/1000);
+    set("sv-time",pad(m)+":"+pad(s));
+    if(tracking&&lastGPSPos&&gpsPath.length>1){
+      const vel=(totalDist/(el/3600000)).toFixed(1);
+      set("stext",totalDist.toFixed(3)+"km · "+vel+"km/h");
+    }
+  },1000);
+  if(!navigator.geolocation){set("stext","GPS não disponível");return;}
+  watchId=navigator.geolocation.watchPosition(pos=>{
+    const lat=pos.coords.latitude,lng=pos.coords.longitude,acc=pos.coords.accuracy||999;
+    if(acc>30&&gpsPath.length>0){set("gps-txt","±"+Math.round(acc)+"m ⚠");return;}
+    useGPS=true;set("gps-txt","±"+Math.round(acc)+"m");
+    if(lastGPSPos){const d=geoD(lastGPSPos.lat,lastGPSPos.lng,lat,lng);if(d<100){totalDist+=d/1000;set("sv-dist",totalDist.toFixed(3));}}
+    lastGPSPos={lat,lng,acc,alt:pos.coords.altitude||null,ts:Date.now()};
+    gpsPath.push({lat,lng,acc,alt:pos.coords.altitude||null,ts:Date.now()});
+    set("sv-pts",gpsPath.length);
+    if(gpsPath.length===1&&lmap)lmap.setView([lat,lng],18,{animate:true});
+    if(geofenceAtivo)verificarGeofence(lat,lng);
+    mapAddPoint(lat,lng);
+  },err=>{
+    const msgs={1:"GPS negado",2:"Sinal indisponível",3:"Timeout GPS"};
+    set("stext",msgs[err.code]||"Erro GPS");set("gps-txt","ERRO");
+  },{enableHighAccuracy:true,maximumAge:0,timeout:15000});
+
 if(navigator.geolocation){
   watchId=navigator.geolocation.watchPosition(pos=>{
     useGPS=true;
@@ -735,7 +1152,18 @@ if(navigator.geolocation){
 }else startSim();
 }
 function startSim(){document.getElementById("gps-txt").textContent="Demo";simInt=setInterval(()=>{simAngle+=(Math.random()-.5)*.55;const sp=.007+Math.random()*.005;let nx=Math.max(.07,Math.min(.93,simPos.x+Math.cos(simAngle)*sp)),ny=Math.max(.07,Math.min(.93,simPos.y+Math.sin(simAngle)*sp));totalDist+=Math.sqrt(Math.pow((nx-simPos.x)*.1,2)+Math.pow((ny-simPos.y)*.09,2))*800;document.getElementById("sv-dist").textContent=totalDist.toFixed(2);simPos={x:nx,y:ny};},500);}
-function pauseTracking(){tracking=false;paused=true;pausedMs=Date.now()-startTime;clearInterval(timerInt);clearInterval(simInt);if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;}document.getElementById("btn-track").className="btn btn-primary";document.getElementById("track-icon").className="ti ti-player-play";document.getElementById("track-lbl").textContent="Retomar";["sdot","sdot2"].forEach(id=>document.getElementById(id).className="sdot paused");document.getElementById("stext").textContent=`Pausado · ${pontos.length} ponto(s) · ${totalDist.toFixed(2)} km`;}
+function pauseTracking(){
+  tracking=false;paused=true;pausedMs=Date.now()-startTime;
+  clearInterval(timerInt);if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;}
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  const cls=(id,v)=>{const e=document.getElementById(id);if(e)e.className=v;};
+  const bt=document.getElementById("btn-track");if(bt)bt.className="btn btn-primary";
+  const ic=document.getElementById("track-icon");if(ic)ic.className="ti ti-player-play";
+  const lb=document.getElementById("track-lbl");if(lb)lb.textContent="Retomar";
+  cls("sdot","sdot paused");cls("sdot2","sdot paused");
+  const m=Math.floor(pausedMs/60000),s=Math.floor((pausedMs%60000)/1000);
+  set("stext",`Pausado · ${totalDist.toFixed(2)}km · ${pad(m)}:${pad(s)} · ${pontos.length}pts`);
+}
 function geoD(a,b,c,d){const R=6371000,p1=a*Math.PI/180,p2=c*Math.PI/180,dp=(c-a)*Math.PI/180,dl=(d-b)*Math.PI/180,x=Math.sin(dp/2)**2+Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)**2;return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
 function showModalPonto(){fotos=[];document.getElementById("m-titulo").value="";document.getElementById("m-obs").value="";document.getElementById("foto-preview").innerHTML='<div class="foto-add" onclick="document.getElementById(\'foto-input\').click()"><i class="ti ti-camera"></i></div>';document.getElementById("modal-ov").classList.add("show");toggleMFields();}
 function closeModal(){document.getElementById("modal-ov").classList.remove("show");}
@@ -819,116 +1247,149 @@ function buildReport(){
 }
 function RR(l,v){return`<div class="rep-row"><span class="rep-lbl">${l}</span><span class="rep-val">${v}</span></div>`;}
 function fmtD(s){if(!s)return"—";const[y,m,d]=s.split("-");return`${d}/${m}/${y}`;}
-function exportKML(){
-  const a=currentArea||{nome:"Vistoria"},now=new Date().toISOString();
-  // usa coordenadas GPS reais se disponíveis, senão avisa que é simulação
-  const hasGPS = useGPS && gpsPath.length>0;
-  const coords = hasGPS
-    ? gpsPath.map(p=>`${p.lng.toFixed(7)},${p.lat.toFixed(7)},0`).join("\n")
-    : "// Sem GPS real — coordenadas não disponíveis";
-  const pmks=pontos.map((p,i)=>{
-    const hasGPSPt = p.gps && p.gps.lat;
-    const coord = hasGPSPt ? `${p.gps.lng.toFixed(7)},${p.gps.lat.toFixed(7)},0` : null;
-    if(!coord) return `<!-- Ponto ${i+1} sem GPS real -->`;
-    return `<Placemark><name>${i+1}. ${p.titulo}</name><description><![CDATA[${TL[p.tipo]}${p.obs?" — "+p.obs:""} | Tempo: ${p.time} | Dist: ${p.dist}km]]></description><Point><coordinates>${coord}</coordinates></Point></Placemark>`;
-  }).join("\n");
-  const rotaKml = hasGPS
-    ? `<Placemark><name>Rota</name><styleUrl>#rota</styleUrl><LineString><tessellate>1</tessellate><coordinates>${coords}</coordinates></LineString></Placemark>`
-    : `<!-- Rota sem GPS real -->`;
-  const kml=`<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Vistoria: ${a.nome} — ${now.slice(0,10)}</name><description><![CDATA[Safra: ${a.safra||"—"} | Cultura: ${a.cultura||"—"} | ${a.ha||"?"}ha | ${totalDist.toFixed(2)}km | ${pontos.length}pts${!hasGPS?" | ⚠️ GPS não usado":""} ]]></description><Style id="rota"><LineStyle><color>ff6BC900</color><width>3</width></LineStyle></Style>${rotaKml}\n${pmks}</Document></kml>`;
-  if(!hasGPS){alert("⚠️ GPS não estava ativo durante esta vistoria.\nO KML não terá coordenadas reais.\n\nPara ter o rastreamento correto, abra o app via HTTPS (GitHub Pages) e permita o GPS no navegador.");}
-  dl(kml,`vistoria_${slug(a.nome)}_${now.slice(0,10)}.kml`,"application/vnd.google-earth.kml+xml");
+function gerarKMLString(){
+  const a=currentArea||{nome:"Vistoria"};
+  const now=new Date().toISOString();
+  const hasGPS=useGPS&&gpsPath.length>0;
+  const estilos=Object.entries({observacao:"ff0A84FF",cultivar:"ff00C96B",praga:"ffFF6B35",doenca:"ffFF9F0A",invasora:"ff30D158",solo:"ff8E8E93",agua:"ff5AC8FA",stand:"ff64D2FF",producao:"ffBF5AF2",adubacao:"ffFFD60A",outro:"ff636366"})
+    .map(([t,cor])=>`<Style id="pt_${t}"><IconStyle><color>${cor}</color><scale>0.9</scale><Icon><href>https://maps.google.com/mapfiles/kml/paddle/wht-circle.png</href></Icon></IconStyle></Style>`).join("");
+  const polyKml=currentArea?.poligono?.length>2
+    ?`<Placemark><name>Talhão: ${a.nome}</name><Style><LineStyle><color>80F0C85B</color><width>2</width></LineStyle><PolyStyle><color>1AF0C85B</color></PolyStyle></Style><Polygon><outerBoundaryIs><LinearRing><coordinates>${currentArea.poligono.map(c=>`${c.lng.toFixed(7)},${c.lat.toFixed(7)},0`).join(" ")}</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>`:"";
+  const rotaKml=hasGPS?`<Placemark><name>Rota GPS</name><Style><LineStyle><color>ffF0C85B</color><width>3</width></LineStyle></Style><LineString><tessellate>1</tessellate><coordinates>${gpsPath.map(p=>`${p.lng.toFixed(7)},${p.lat.toFixed(7)},${p.alt||0}`).join(" ")}</coordinates></LineString></Placemark>`:"";
+  const ptKml=pontos.map((p,i)=>{
+    if(!p.gps)return`<!-- ${i+1} sem GPS -->`;
+    const alt=p.gps.alt||0;
+    const desc=`${TL[p.tipo]}${p.obs?" — "+p.obs:""} | ${p.time} | ${p.dist}km | ±${Math.round(p.gps.acc||0)}m`;
+    return`<Placemark><name>${i+1}. ${p.titulo}</name><description><![CDATA[${desc}]]></description><styleUrl>#pt_${p.tipo}</styleUrl><Point><altitudeMode>absolute</altitudeMode><coordinates>${p.gps.lng.toFixed(7)},${p.gps.lat.toFixed(7)},${alt.toFixed(1)}</coordinates></Point></Placemark>`;
+  }).join("");
+  return`<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Vistoria: ${a.nome} — ${now.slice(0,10)}</name><description><![CDATA[${a.fazenda||"—"} | ${a.cultura||"—"} | ${a.ha||"?"}ha | ${totalDist.toFixed(3)}km | ${pontos.length}pts | ${currentUser?.nome||"—"}]]></description>${estilos}${polyKml}${rotaKml}${ptKml}</Document></kml>`;
 }
-function exportTXT(){const a=currentArea||{},elapsed=pausedMs||(startTime?Date.now()-startTime:0),m=Math.floor(elapsed/60000),s=Math.floor((elapsed%60000)/1000);let t=`RELATÓRIO DE VISTORIA — AGRO BASE Field\n${new Date().toLocaleString("pt-BR")}\n${"═".repeat(46)}\nNome: ${a.nome||"—"} | Fazenda: ${a.fazenda||"—"} | ${a.municipio||"—"}\nSafra: ${a.safra||"—"} | Cultura: ${a.cultura||"—"} | Cultivar: ${a.cultivar||"—"}\nÁrea: ${a.ha||"?"}ha | Estádio: ${a.estadio||"—"}\nObjetivos: ${(a.objetivos||[]).join(", ")||"—"}\n\nVISTORIA: ${m}min${s}s | ${totalDist.toFixed(2)}km | ${pontos.length}pts\n\nPONTOS\n${"─".repeat(40)}\n`;pontos.forEach((p,i)=>{t+=`\n${i+1}. [${TL[p.tipo]}] ${p.titulo}\n   ${p.time} | ${p.dist}km\n`;if(p.obs)t+=`   Obs: ${p.obs}\n`;if(p.cultivar){const c=p.cultivar;t+=`   ${c.a.nome||"A"}: stand=${c.a.stand||"?"}pl/m alt=${c.a.alt||"?"}cm nota=${c.a.nota||"?"}/5 ndvi=${c.a.ndvi||"?"}\n   ${c.b.nome||"B"}: stand=${c.b.stand||"?"}pl/m alt=${c.b.alt||"?"}cm nota=${c.b.nota||"?"}/5 ndvi=${c.b.ndvi||"?"}\n${c.diff?"   Dif: "+c.diff+"\n":""}` ;}if(p.praga)t+=`   ${p.praga.especie||"—"} | ${p.praga.nivel} | ${p.praga.perc||"?"}%área | ${p.praga.ind||"?"}ind./m²\n   Rec: ${p.praga.rec}\n`;if(p.stand)t+=`   Stand: ${p.stand.plantas||"?"}pl/m | Falhas: ${p.stand.falhas||"?"}% | ${p.stand.sit}\n`;if(p.prod)t+=`   Vagens/pl: ${p.prod.vag||"?"} | Grãos/vag: ${p.prod.grao||"?"} | ${p.prod.sc||"?"}sc/ha\n`;if(p.adub)t+=`   ${p.adub.sintoma||"?"} (${p.adub.nutri||"?"}) | Int: ${p.adub.int||"?"}/5 | ${p.adub.perc||"?"}%plantas\n`;t+=`   Fotos: ${p.fotos?p.fotos.length:0}\n`;});t+=`\n${"═".repeat(46)}\nGerado por AGRO BASE Field`;dl(t,`relatorio_${slug(a.nome||"campo")}_${new Date().toISOString().slice(0,10)}.txt`,"text/plain;charset=utf-8");}
+
+function exportKML(){
+  const a=currentArea||{nome:"Vistoria"};
+  const kml=gerarKMLString();
+  if(!useGPS||gpsPath.length===0) mostrarToast("⚠ KML sem rota GPS — abra via HTTPS","#E05252");
+  dl(kml,`vistoria_${slug(a.nome)}_${new Date().toISOString().slice(0,10)}.kml`,"application/vnd.google-earth.kml+xml");
+}
+function exportTXT(){const a=currentArea||{},elapsed=pausedMs||(startTime?Date.now()-startTime:0),m=Math.floor(elapsed/60000),s=Math.floor((elapsed%60000)/1000);let t=`RELATÓRIO DE VISTORIA — AGRO BASE\n${new Date().toLocaleString("pt-BR")}\n${"═".repeat(46)}\nNome: ${a.nome||"—"} | Fazenda: ${a.fazenda||"—"} | ${a.municipio||"—"}\nSafra: ${a.safra||"—"} | Cultura: ${a.cultura||"—"} | Cultivar: ${a.cultivar||"—"}\nÁrea: ${a.ha||"?"}ha | Estádio: ${a.estadio||"—"}\nObjetivos: ${(a.objetivos||[]).join(", ")||"—"}\n\nVISTORIA: ${m}min${s}s | ${totalDist.toFixed(2)}km | ${pontos.length}pts\n\nPONTOS\n${"─".repeat(40)}\n`;pontos.forEach((p,i)=>{t+=`\n${i+1}. [${TL[p.tipo]}] ${p.titulo}\n   ${p.time} | ${p.dist}km\n`;if(p.obs)t+=`   Obs: ${p.obs}\n`;if(p.cultivar){const c=p.cultivar;t+=`   ${c.a.nome||"A"}: stand=${c.a.stand||"?"}pl/m alt=${c.a.alt||"?"}cm nota=${c.a.nota||"?"}/5 ndvi=${c.a.ndvi||"?"}\n   ${c.b.nome||"B"}: stand=${c.b.stand||"?"}pl/m alt=${c.b.alt||"?"}cm nota=${c.b.nota||"?"}/5 ndvi=${c.b.ndvi||"?"}\n${c.diff?"   Dif: "+c.diff+"\n":""}` ;}if(p.praga)t+=`   ${p.praga.especie||"—"} | ${p.praga.nivel} | ${p.praga.perc||"?"}%área | ${p.praga.ind||"?"}ind./m²\n   Rec: ${p.praga.rec}\n`;if(p.stand)t+=`   Stand: ${p.stand.plantas||"?"}pl/m | Falhas: ${p.stand.falhas||"?"}% | ${p.stand.sit}\n`;if(p.prod)t+=`   Vagens/pl: ${p.prod.vag||"?"} | Grãos/vag: ${p.prod.grao||"?"} | ${p.prod.sc||"?"}sc/ha\n`;if(p.adub)t+=`   ${p.adub.sintoma||"?"} (${p.adub.nutri||"?"}) | Int: ${p.adub.int||"?"}/5 | ${p.adub.perc||"?"}%plantas\n`;t+=`   Fotos: ${p.fotos?p.fotos.length:0}\n`;});t+=`\n${"═".repeat(46)}\nGerado por AGRO BASE`;dl(t,`relatorio_${slug(a.nome||"campo")}_${new Date().toISOString().slice(0,10)}.txt`,"text/plain;charset=utf-8");}
 function dl(content,filename,type){const b=new Blob([content],{type}),u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download=filename;a.click();URL.revokeObjectURL(u);}
 function slug(s){return(s||"campo").toLowerCase().replace(/\s+/g,"_").replace(/[^\w-]/g,"").slice(0,30);}
 async function finalizarVistoria(){
   if(!confirm("Finalizar a vistoria?"))return;
-  clearInterval(timerInt);clearInterval(simInt);if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;}
+  clearInterval(timerInt);if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;}
   tracking=false;
   if(startTime){
     pausedMs=Date.now()-startTime;
-    stats.vis++;stats.km=parseFloat((stats.km+totalDist).toFixed(2));
+    stats.vis++;stats.km=parseFloat((stats.km+totalDist).toFixed(3));
     salvarAreasLocal();
-    // salva vistoria no Firebase
-    const vistoria={
-      id:Date.now(),
-      area:currentArea?.nome||"—",
-      cultura:currentArea?.cultura||"—",
-      fazenda:currentArea?.fazenda||"—",
-      municipio:currentArea?.municipio||"—",
-      ha:currentArea?.ha||"—",
-      distKm:totalDist.toFixed(2),
-      pontos:pontos.length,
-      data:new Date().toLocaleDateString("pt-BR"),
-      dataISO:new Date().toISOString(),
-      gpsUsado:useGPS
-    };
-    try{ await dbSalvarVistoria(vistoria); }catch(e){ console.warn("Firebase offline"); }
+    const duracaoMs=pausedMs;
+    const m=Math.floor(duracaoMs/60000),s=Math.floor((duracaoMs%60000)/1000);
+    const visId=Date.now();
+    // salva KML no Firestore
+    try{
+      const kmlStr=gerarKMLString();
+      const kmlDoc={visId,owner:currentUser?.user,nomeOwner:currentUser?.nome,area:currentArea?.nome||"—",data:new Date().toLocaleDateString("pt-BR"),dataISO:new Date().toISOString(),kml:kmlStr,fileName:`vistoria_${slug(currentArea?.nome||"campo")}_${new Date().toISOString().slice(0,10)}.kml`};
+      if(window._db)await window._fsSetDoc(window._fsDoc(window._db,"kmls",visId.toString()),kmlDoc);
+      window._lastKmlId=visId;
+    }catch(e){console.warn("KML Firebase offline");}
+    const vistoria={id:visId,area:currentArea?.nome||"—",cultura:currentArea?.cultura||"—",fazenda:currentArea?.fazenda||"—",municipio:currentArea?.municipio||"—",ha:currentArea?.ha||"—",distKm:totalDist.toFixed(3),duracaoStr:pad(m)+":"+pad(s),velMediaKmh:duracaoMs>0?(totalDist/(duracaoMs/3600000)).toFixed(1):"—",pontos:pontos.length,trackPts:gpsPath.length,track:gpsPath.filter((_,i)=>i%5===0).map(p=>({lat:p.lat,lng:p.lng})),data:new Date().toLocaleDateString("pt-BR"),horaInicio:new Date(startTime).toLocaleTimeString("pt-BR"),horaFim:new Date().toLocaleTimeString("pt-BR"),dataISO:new Date().toISOString(),gpsUsado:useGPS,kmlSalvo:true,kmlId:visId.toString()};
+    try{await dbSalvarVistoria(vistoria);}catch(e){console.warn("Firebase offline");}
+    window._lastVisId=visId;
   }
   buildReport();showScreen("scr-report");
 }
-function confirmarSaida(){if((tracking||pontos.length>0)&&!confirm("Sair da vistoria em andamento?"))return;clearInterval(timerInt);clearInterval(simInt);if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;}tracking=false;showScreen("scr-areas");}
+function confirmarSaida(){if((tracking||pontos.length>0)&&!confirm("Sair da vistoria em andamento?"))return;clearInterval(timerInt);if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;}tracking=false;showScreen("scr-areas");}
+
+async function baixarKMLFirestore(visId){
+  if(!window._db||!visId){mostrarToast("KML não disponível","#E05252");return;}
+  try{
+    const snap=await window._fsGetDocs(window._fsQuery(window._fsCollection(window._db,"kmls"),window._fsWhere("visId","==",parseInt(visId))));
+    if(snap.empty){mostrarToast("KML não encontrado no servidor","#E05252");return;}
+    const doc=snap.docs[0].data();
+    if(doc.kml)dl(doc.kml,doc.fileName||`vistoria_${visId}.kml`,"application/vnd.google-earth.kml+xml");
+  }catch(e){mostrarToast("Erro ao baixar KML: "+e.message,"#E05252");}
+}
 
 // ── PAINEL ADMIN ──────────────────────────────────────
-let adminFiltro=null;
 async function showScreen(id){
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
+  document.getElementById(id)?.classList.add("active");
   if(id==="scr-areas")renderAreas();
-  if(id==="scr-vistoria")setTimeout(resizeCanvas,60);
-  if(id==="scr-report"){buildReport();document.getElementById("rep-date").textContent=new Date().toLocaleDateString("pt-BR");}
+  if(id==="scr-vistoria")setTimeout(()=>lmap?.invalidateSize(),120);
+  if(id==="scr-report"){buildReport();const rd=document.getElementById("rep-date");if(rd)rd.textContent=new Date().toLocaleDateString("pt-BR");}
+  if(id==="scr-geo")setTimeout(()=>{initGeoMap();geoLeafletMap?.invalidateSize();},120);
   if(id==="scr-admin")await renderAdmin();
+  // ── DESKTOP ──
+  if(window.innerWidth>=1024){
+    const tb=document.getElementById("dt-topbar");
+    if(id==="scr-login"){
+      if(tb)tb.style.display="none";
+    } else {
+      dtSetup();
+      dtNavActive(id);
+      if(id==="scr-areas"){dtMontarAreasLayout();dtRenderAreas();}
+      if(id==="scr-vistoria"){setTimeout(()=>{if(lmap)lmap.invalidateSize();const vt=document.getElementById("vis-title-dt");if(vt)vt.textContent=currentArea?.nome||"VISTORIA";},120);}
+    }
+  }
 }
+let adminFiltro=null,adminMap=null;
 async function renderAdmin(){
-  // filtros por agrônomo
   const agros=USERS.filter(u=>u.role==="agronomo");
-  const filtrosEl=document.getElementById("admin-filtros");
-  filtrosEl.innerHTML=`<button onclick="filtrarAdmin(null)" class="btn ${!adminFiltro?"btn-primary":"btn-ghost"}" style="padding:7px 14px;font-size:13px;">TODOS</button>`+
+  document.getElementById("admin-filtros").innerHTML=
+    `<button onclick="filtrarAdmin(null)" class="btn ${!adminFiltro?"btn-primary":"btn-ghost"}" style="padding:7px 14px;font-size:13px;">TODOS</button>`+
     agros.map(u=>`<button onclick="filtrarAdmin('${u.user}')" class="btn ${adminFiltro===u.user?"btn-primary":"btn-ghost"}" style="padding:7px 14px;font-size:13px;">${u.nome.toUpperCase()}</button>`).join("");
 
+  let allAreas=[],allVis=[],logs=[];
+  try{[allAreas,allVis,logs]=await Promise.all([dbCarregarAreas(adminFiltro),dbCarregarVistorias(adminFiltro),dbCarregarLogsGeofence()]);}catch(e){}
+  const logsFiltrados=adminFiltro?logs.filter(l=>l.owner===adminFiltro):logs;
+  const totalKm=allVis.reduce((s,v)=>s+parseFloat(v.distKm||0),0);
+  const totalPts=allVis.reduce((s,v)=>s+parseInt(v.pontos||0),0);
+
+  // stats
+  const statsEl=document.getElementById("admin-stats");
+  if(statsEl)statsEl.innerHTML=`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;">${[{l:"Áreas",v:allAreas.length},{l:"Vistorias",v:allVis.length},{l:"km",v:totalKm.toFixed(1)},{l:"Pontos",v:totalPts}].map(x=>`<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 6px;text-align:center;"><div style="font-family:var(--font-head);font-size:22px;font-weight:800;color:var(--accent);">${x.v}</div><div style="font-family:var(--font-mono);font-size:10px;color:var(--text3);letter-spacing:1px;">${x.l.toUpperCase()}</div></div>`).join("")}</div>`;
+
+  // mapa admin
+  const mapEl=document.getElementById("admin-map");
+  if(mapEl){
+    mapEl.style.cssText="width:100%;height:280px;display:block;border-radius:8px;overflow:hidden;margin-bottom:16px;";
+    setTimeout(()=>{
+      if(adminMap){adminMap.remove();adminMap=null;}
+      adminMap=L.map(mapEl,{zoomControl:false,attributionControl:false});
+      addSatTiles(adminMap);
+      const allLls=[];
+      allAreas.forEach(a=>{if(a.poligono?.length>2){const lls=a.poligono.map(c=>[c.lat,c.lng]);L.polygon(lls,{color:"#5BC8F0",weight:1.5,opacity:0.6,fillColor:"#5BC8F0",fillOpacity:0.06,dashArray:"4,3"}).bindTooltip(a.nome).addTo(adminMap);lls.forEach(ll=>allLls.push(ll));}});
+      const cores=["#5BC8F0","#F5A623","#5DC98A","#E05252","#BF5AF2"];
+      allVis.forEach((v,vi)=>{if(v.track?.length>1){const lls=v.track.map(p=>[p.lat,p.lng]);const cor=cores[vi%cores.length];L.polyline(lls,{color:cor,weight:2.5,opacity:.85}).bindTooltip(`${v.area} · ${v.nomeOwner||v.owner} · ${v.data}`,{sticky:true}).addTo(adminMap);L.circleMarker(lls[0],{radius:5,color:"#fff",fillColor:cor,fillOpacity:1,weight:1.5}).addTo(adminMap);lls.forEach(ll=>allLls.push(ll));}});
+      logsFiltrados.forEach(l=>{if(!l.gps)return;L.circleMarker([l.gps.lat,l.gps.lng],{radius:7,color:"#fff",fillColor:"#E05252",fillOpacity:1,weight:2}).bindPopup(`<b style="color:#E05252;">⚠ Fora da área</b><br>${l.nomeOwner} · ${l.data} ${l.hora}`).addTo(adminMap);allLls.push([l.gps.lat,l.gps.lng]);});
+      if(allLls.length>0)adminMap.fitBounds(L.latLngBounds(allLls),{padding:[20,20]});
+      else adminMap.setView(DEFAULT_CENTER,13);
+      adminMap.invalidateSize();
+    },150);
+  }
+
+  // alertas geofence
+  const gfEl=document.getElementById("admin-geofence");
+  if(gfEl)gfEl.innerHTML=!logsFiltrados.length
+    ?`<div style="padding:14px 16px;font-family:var(--font-mono);font-size:13px;color:var(--text3);">✓ Nenhum alerta.</div>`
+    :logsFiltrados.map(l=>`<div style="display:flex;align-items:flex-start;gap:12px;padding:13px 16px;border-bottom:1px solid var(--border);"><div style="width:32px;height:32px;border-radius:50%;background:rgba(224,82,82,.15);border:1px solid rgba(224,82,82,.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="ti ti-alert-triangle" style="color:var(--danger);font-size:15px;"></i></div><div style="flex:1;"><div style="font-family:var(--font-head);font-size:15px;font-weight:700;color:var(--danger);">INICIOU FORA DA ÁREA</div><div style="font-family:var(--font-mono);font-size:12px;color:var(--text3);">${l.area} · ${l.fazenda}</div><div style="font-family:var(--font-mono);font-size:12px;color:var(--accent);">👤 ${l.nomeOwner||l.owner} · ${l.data} ${l.hora}</div>${l.gps?`<div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);">📍 ${l.gps.lat.toFixed(5)}, ${l.gps.lng.toFixed(5)}</div>`:""}</div></div>`).join("");
+
   // áreas
-  const areasEl=document.getElementById("admin-areas");
-  areasEl.innerHTML=`<div style="padding:14px 16px;font-family:var(--font-mono);font-size:12px;color:var(--text3);">Carregando...</div>`;
-  try{
-    const allAreas=await dbCarregarAreas(adminFiltro);
-    if(!allAreas.length){areasEl.innerHTML=`<div style="padding:14px 16px;font-family:var(--font-mono);font-size:13px;color:var(--text3);">Nenhuma área cadastrada.</div>`;return;}
-    areasEl.innerHTML=allAreas.map(a=>`
-      <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--border);">
-        <div style="font-size:20px;">${CICONS[a.cultura]||"🌿"}</div>
-        <div style="flex:1;">
-          <div style="font-family:var(--font-head);font-size:16px;font-weight:700;">${a.nome}</div>
-          <div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);">${[a.cultura,a.cultivar,a.ha?a.ha+"ha":""].filter(Boolean).join(" · ")} · ${a.data||""}</div>
-          <div style="font-family:var(--font-mono);font-size:11px;color:var(--accent);margin-top:2px;">👤 ${USERS.find(u=>u.user===a.owner)?.nome||a.owner||"—"}</div>
-        </div>
-      </div>`).join("");
-  }catch(e){areasEl.innerHTML=`<div style="padding:14px 16px;color:var(--danger);font-family:var(--font-mono);font-size:13px;">Erro ao carregar: ${e.message}</div>`;}
+  document.getElementById("admin-areas").innerHTML=!allAreas.length
+    ?`<div style="padding:14px 16px;font-family:var(--font-mono);font-size:13px;color:var(--text3);">Nenhuma área.</div>`
+    :allAreas.map(a=>`<div style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--border);"><div style="font-size:20px;">${CICONS[a.cultura]||"🌿"}</div><div style="flex:1;"><div style="font-family:var(--font-head);font-size:16px;font-weight:700;">${a.nome}</div><div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);">${[a.cultura,a.cultivar,a.ha?a.ha+"ha":""].filter(Boolean).join(" · ")}${a.poligono?" · 📐KML":""} · ${a.data||""}</div><div style="font-family:var(--font-mono);font-size:11px;color:var(--accent);">👤 ${USERS.find(u=>u.user===a.owner)?.nome||a.owner||"—"}</div></div></div>`).join("");
 
   // vistorias
-  const visEl=document.getElementById("admin-vistorias");
-  visEl.innerHTML=`<div style="padding:14px 16px;font-family:var(--font-mono);font-size:12px;color:var(--text3);">Carregando...</div>`;
-  try{
-    const allVis=await dbCarregarVistorias(adminFiltro);
-    if(!allVis.length){visEl.innerHTML=`<div style="padding:14px 16px;font-family:var(--font-mono);font-size:13px;color:var(--text3);">Nenhuma vistoria registrada.</div>`;return;}
-    visEl.innerHTML=allVis.map(v=>`
-      <div style="padding:13px 16px;border-bottom:1px solid var(--border);">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <div style="font-family:var(--font-head);font-size:16px;font-weight:700;">${v.area}</div>
-          <div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);">${v.data}</div>
-        </div>
-        <div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);margin-top:3px;">${v.cultura} · ${v.distKm}km · ${v.pontos}pts · ${v.fazenda||"—"}</div>
-        <div style="font-family:var(--font-mono);font-size:11px;color:var(--accent);margin-top:2px;">👤 ${v.nomeOwner||v.owner||"—"}</div>
-      </div>`).join("");
-  }catch(e){visEl.innerHTML=`<div style="padding:14px 16px;color:var(--danger);font-family:var(--font-mono);font-size:13px;">Erro: ${e.message}</div>`;}
+  document.getElementById("admin-vistorias").innerHTML=!allVis.length
+    ?`<div style="padding:14px 16px;font-family:var(--font-mono);font-size:13px;color:var(--text3);">Nenhuma vistoria.</div>`
+    :allVis.map(v=>`<div style="padding:13px 16px;border-bottom:1px solid var(--border);"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><div style="font-family:var(--font-head);font-size:16px;font-weight:700;">${v.area}</div><div style="display:flex;align-items:center;gap:6px;"><div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);">${v.data}</div><button onclick="confirmarExcluirVistoria(${v.id})" style="background:none;border:1px solid rgba(224,82,82,.3);border-radius:4px;padding:3px 7px;cursor:pointer;color:var(--danger);font-size:13px;display:flex;align-items:center;"><i class="ti ti-trash" style="font-size:13px;"></i></button></div></div><div style="font-family:var(--font-mono);font-size:12px;color:var(--text3);margin-top:3px;display:flex;flex-wrap:wrap;gap:8px;"><span>📍 ${v.distKm}km</span>${v.duracaoStr?`<span>⏱ ${v.duracaoStr}</span>`:""}<span>📌 ${v.pontos}pts</span>${v.ha?`<span>🌾 ${v.ha}ha</span>`:""}</div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;gap:8px;"><div style="font-family:var(--font-mono);font-size:12px;color:var(--accent);">👤 ${v.nomeOwner||v.owner||"—"} · ${v.horaInicio||""} → ${v.horaFim||""}</div>${v.kmlSalvo?`<button onclick="baixarKMLFirestore(${v.id})" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 10px;font-family:var(--font-mono);font-size:11px;color:var(--accent);cursor:pointer;display:flex;align-items:center;gap:4px;"><i class="ti ti-file-type-xml" style="font-size:13px;"></i> KML</button>`:""}</div></div>`).join("");
 }
-async function adminIrAoCampo(){
-  await carregarAreasUsuario();
-  showScreen("scr-areas");
-}
+async function filtrarAdmin(user){adminFiltro=user;await renderAdmin();}
+async function adminIrAoCampo(){await carregarAreasUsuario();showScreen("scr-areas");}
 
 // ── TUTORIAL ─────────────────────────────────────────
 const TSTEPS=[
-  {ic:"🌱",ti:"Bem-vindo ao AGRO BASE Field!",
+  {ic:"🌱",ti:"Bem-vindo ao AGRO BASE!",
    tx:"Sistema de <b>vistoria agronômica</b> com GPS em tempo real, geofence, relatórios e KML automáticos. Siga os próximos passos para entender como usar!"},
   {ic:"📋",ti:"Suas Áreas",
    tx:"Na tela inicial ficam suas <b>áreas cadastradas</b>. Cada área representa um talhão ou gleba que você vai vistoriar."},
@@ -952,23 +1413,30 @@ const TSTEPS=[
 let tStep=0;
 
 function tutVerificarPrimeiroAcesso(user){
-  if(!localStorage.getItem("tut_ok_"+user)) tutAbrir();
+  if(!localStorage.getItem("tut_ok_"+user)){
+    // garante que DOM está pronto
+    setTimeout(tutAbrir, 600);
+  }
 }
 function tutAbrir(){
   tStep=0;
-  document.getElementById("tut-ov").classList.add("on");
-  document.getElementById("tut-card").classList.add("on");
+  const ov=document.getElementById("tut-ov");
+  const card=document.getElementById("tut-card");
+  if(!ov||!card) return;
   tutRender();
+  ov.classList.add("on");
+  card.classList.add("on");
 }
 function tutRender(){
-  const s=TSTEPS[tStep], n=TSTEPS.length;
-  document.getElementById("tut-ic").textContent=s.ic;
-  document.getElementById("tut-badge").textContent=`PASSO ${tStep+1} DE ${n}`;
-  document.getElementById("tut-ti").textContent=s.ti;
-  document.getElementById("tut-tx").innerHTML=s.tx;
-  document.getElementById("tut-next").textContent=tStep===n-1?"Começar a usar!":"Próximo →";
-  document.getElementById("tut-dots").innerHTML=
-    TSTEPS.map((_,i)=>`<div class="tut-dot${i===tStep?" on":""}"></div>`).join("");
+  const s=TSTEPS[tStep];
+  if(!s) return;
+  const n=TSTEPS.length;
+  const ic=document.getElementById("tut-ic");if(ic)ic.textContent=s.ic;
+  const badge=document.getElementById("tut-badge");if(badge)badge.textContent=`PASSO ${tStep+1} DE ${n}`;
+  const ti=document.getElementById("tut-ti");if(ti)ti.textContent=s.ti;
+  const tx=document.getElementById("tut-tx");if(tx)tx.innerHTML=s.tx;
+  const next=document.getElementById("tut-next");if(next)next.textContent=tStep===n-1?"Começar a usar! ✓":"Próximo →";
+  const dots=document.getElementById("tut-dots");if(dots)dots.innerHTML=TSTEPS.map((_,i)=>`<div class="tut-dot${i===tStep?" on":""}"></div>`).join("");
 }
 function tutProximo(){
   if(tStep<TSTEPS.length-1){
@@ -993,7 +1461,465 @@ function tutReiniciar(){
 // Zera o tutorial para todos (força reexibição)
 USERS.forEach(u=>localStorage.removeItem("tut_ok_"+u.user));
 
-window.addEventListener("resize",()=>{if(lmap)lmap.invalidateSize();});
+// ── INDEXEDDB — OFFLINE ──────────────────────────────
+const IDB_NAME="agrobase_v1";let idb=null;
+function abrirIDB(){return new Promise((res,rej)=>{const r=indexedDB.open(IDB_NAME,1);r.onupgradeneeded=e=>{const d=e.target.result;["areas","vistorias","kmls","logs","sync_queue"].forEach(s=>{if(!d.objectStoreNames.contains(s))d.createObjectStore(s,{keyPath:s==="sync_queue"?"qid":"id",autoIncrement:s==="sync_queue"});});};r.onsuccess=e=>{idb=e.target.result;res(idb);};r.onerror=e=>rej(e);});}
+function idbPut(s,o){return new Promise((res,rej)=>{const t=idb.transaction(s,"readwrite");t.objectStore(s).put(o).onsuccess=()=>res();t.onerror=e=>rej(e);});}
+function idbGetAll(s){return new Promise((res,rej)=>{const t=idb.transaction(s,"readonly");const r=t.objectStore(s).getAll();r.onsuccess=e=>res(e.target.result);r.onerror=e=>rej(e);});}
+function idbDelete(s,k){return new Promise((res,rej)=>{const t=idb.transaction(s,"readwrite");t.objectStore(s).delete(k).onsuccess=()=>res();t.onerror=e=>rej(e);});}
+async function enqueueSync(op){if(idb){const t=idb.transaction("sync_queue","readwrite");t.objectStore("sync_queue").add({...op,ts:Date.now()});}}
+
+let isOnline=navigator.onLine,syncInProgress=false;
+
+function bannerOffline(online,syncing=false){
+  let b=document.getElementById("offline-banner");
+  if(!b){b=document.createElement("div");b.id="offline-banner";b.style.cssText="position:fixed;top:0;left:0;right:0;z-index:9999;padding:8px 16px;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;display:none;align-items:center;justify-content:space-between;gap:10px;";document.body.appendChild(b);}
+  if(online&&!syncing){b.style.display="none";return;}
+  b.style.display="flex";
+  if(syncing){b.style.background="rgba(245,166,35,.95)";b.style.color="#071826";b.innerHTML="<span>⏳ Sincronizando dados...</span>";}
+  else{b.style.background="rgba(224,82,82,.95)";b.style.color="#fff";b.innerHTML="<span>📡 Sem internet — dados salvos localmente</span><span style='font-size:11px;opacity:.7;'>Sync automático ao reconectar</span>";}
+}
+
+async function sincronizarPendentes(){
+  if(!idb||!window._db||!isOnline||syncInProgress)return;
+  const queue=await idbGetAll("sync_queue");
+  if(!queue.length)return;
+  syncInProgress=true;bannerOffline(true,true);
+  let ok=0;
+  for(const op of queue){
+    try{
+      if(op.tipo==="area")await window._fsSetDoc(window._fsDoc(window._db,"areas",op.data.id.toString()),op.data);
+      else if(op.tipo==="vistoria")await window._fsSetDoc(window._fsDoc(window._db,"vistorias",op.data.id.toString()),op.data);
+      else if(op.tipo==="kml")await window._fsSetDoc(window._fsDoc(window._db,"kmls",op.data.visId.toString()),op.data);
+      else if(op.tipo==="del_area")await window._fsDeleteDoc(window._fsDoc(window._db,"areas",op.id.toString()));
+      const t=idb.transaction("sync_queue","readwrite");t.objectStore("sync_queue").delete(op.qid);ok++;
+    }catch(e){}
+  }
+  syncInProgress=false;bannerOffline(true,false);
+  if(ok>0)mostrarToast(`✓ ${ok} operação(ões) sincronizada(s)`);
+}
+
+window.addEventListener("online",()=>{isOnline=true;bannerOffline(true);sincronizarPendentes();});
+window.addEventListener("offline",()=>{isOnline=false;bannerOffline(false);});
+
+// inicializa IDB
+abrirIDB().then(()=>{if(!isOnline)bannerOffline(false);}).catch(()=>{});
+window.addEventListener("firebase-ready",()=>{if(isOnline)setTimeout(sincronizarPendentes,1500);});
+
+// ── EXCLUIR ÁREA E VISTORIA ──────────────────────────
+function confirmarExcluirArea(i,e){
+  e.stopPropagation();
+  const a=areas[i];
+  if(!confirm(`Excluir área "${a.nome}"?`))return;
+  dbDeletarArea(a.id).catch(()=>{});
+  areas.splice(i,1);salvarAreasLocal();renderAreas();
+  mostrarToast("✓ Área excluída");
+}
+
+async function dbExcluirVistoria(id){
+  const sid=id.toString();
+  if(idb){await idbDelete("vistorias",id).catch(()=>{});await idbDelete("kmls",sid).catch(()=>{});}
+  if(isOnline&&window._db){
+    try{await window._fsDeleteDoc(window._fsDoc(window._db,"vistorias",sid));}catch(e){}
+    try{await window._fsDeleteDoc(window._fsDoc(window._db,"kmls",sid));}catch(e){}
+  }
+}
+
+async function confirmarExcluirVistoria(id){
+  if(!confirm(`Excluir esta vistoria?`))return;
+  mostrarToast("Excluindo...");
+  await dbExcluirVistoria(id);
+  mostrarToast("✓ Vistoria excluída");
+  await renderAdmin();
+}
+
+// ── FUNÇÕES DB ATUALIZADAS COM IDB ───────────────────
+async function dbSalvarArea(area){
+  const doc={...area, owner: area.owner||currentUser?.user};
+  if(idb)await idbPut("areas",doc).catch(()=>{});
+  if(isOnline&&window._db){try{await window._fsSetDoc(window._fsDoc(window._db,"areas",area.id.toString()),doc);}catch(e){await enqueueSync({tipo:"area",data:doc});}}
+  else await enqueueSync({tipo:"area",data:doc});
+}
+async function dbSalvarVistoria(v){
+  const doc={...v,owner:currentUser?.user,nomeOwner:currentUser?.nome};
+  if(idb)await idbPut("vistorias",doc).catch(()=>{});
+  if(isOnline&&window._db){try{await window._fsSetDoc(window._fsDoc(window._db,"vistorias",v.id.toString()),doc);}catch(e){await enqueueSync({tipo:"vistoria",data:doc});}}
+  else await enqueueSync({tipo:"vistoria",data:doc});
+}
+async function dbDeletarArea(id){
+  if(idb)await idbDelete("areas",id).catch(()=>{});
+  if(isOnline&&window._db){try{await window._fsDeleteDoc(window._fsDoc(window._db,"areas",id.toString()));}catch(e){await enqueueSync({tipo:"del_area",id});}}
+  else await enqueueSync({tipo:"del_area",id});
+}
+async function dbCarregarAreas(userFilter){
+  if(isOnline&&window._db){
+    try{
+      const q=userFilter?window._fsQuery(window._fsCollection(window._db,"areas"),window._fsWhere("owner","==",userFilter)):window._fsCollection(window._db,"areas");
+      const snap=await window._fsGetDocs(q);
+      const dados=snap.docs.map(d=>d.data());
+      if(idb)for(const d of dados)await idbPut("areas",d).catch(()=>{});
+      return dados;
+    }catch(e){}
+  }
+  if(idb){const t=await idbGetAll("areas");return userFilter?t.filter(a=>a.owner===userFilter):t;}
+  return[];
+}
+async function dbCarregarVistorias(userFilter){
+  if(isOnline&&window._db){
+    try{
+      const col=window._fsCollection(window._db,"vistorias");
+      const q=userFilter?window._fsQuery(col,window._fsWhere("owner","==",userFilter)):col;
+      const snap=await window._fsGetDocs(q);
+      const dados=snap.docs.map(d=>d.data()).sort((a,b)=>b.id-a.id);
+      if(idb)for(const d of dados)await idbPut("vistorias",d).catch(()=>{});
+      return dados;
+    }catch(e){}
+  }
+  if(idb){const t=await idbGetAll("vistorias");const f=userFilter?t.filter(v=>v.owner===userFilter):t;return f.sort((a,b)=>b.id-a.id);}
+  return[];
+}
+async function dbCarregarLogsGeofence(){
+  if(isOnline&&window._db){try{const snap=await window._fsGetDocs(window._fsCollection(window._db,"logs_geofence"));return snap.docs.map(d=>d.data()).sort((a,b)=>b.id-a.id);}catch(e){}}
+  if(idb){const t=await idbGetAll("logs");return t.sort((a,b)=>b.id-a.id);}
+  return[];
+}
+
+// ── SERVICE WORKER ────────────────────────────────────
+if('serviceWorker' in navigator){
+  const ok=location.hostname.endsWith('.github.io')||(location.protocol==='https:'&&!location.hostname.includes('claude'));
+  if(ok) window.addEventListener('load',async()=>{
+    try{
+      const reg=await navigator.serviceWorker.register('./sw.js');
+      navigator.serviceWorker.addEventListener('message',e=>{
+        if(e.data?.tipo==='PRECACHE_DONE') mostrarToast(`✓ Mapa offline: ${e.data.count} tiles`);
+      });
+    }catch(e){}
+  });
+}
+
+function precacheMapa(){
+  if(!navigator.serviceWorker?.controller){mostrarToast("⚠ Recarregue o app para ativar o offline","#E05252");return;}
+  if(!currentArea?.poligono?.length){mostrarToast("⚠ Cadastre uma área com KML primeiro","#E05252");return;}
+  const lats=currentArea.poligono.map(p=>p.lat),lngs=currentArea.poligono.map(p=>p.lng);
+  const margin=0.01;
+  navigator.serviceWorker.controller.postMessage({tipo:'PRECACHE_TILES',bounds:[Math.min(...lats)-margin,Math.max(...lats)+margin,Math.min(...lngs)-margin,Math.max(...lngs)+margin],zoom:[13,18]});
+  mostrarToast("Salvando mapa para uso offline...");
+}
+
+// ── KML MÚLTIPLO ─────────────────────────────────────
+let kmlFila = []; // lista de KMLs processados aguardando cadastro
+
+async function lerKMLMultiplo(event){
+  const files=[...event.target.files];
+  if(!files.length)return;
+  const status=document.getElementById("geo-status");
+  status.textContent=`Processando ${files.length} arquivo(s)...`;
+  status.style.color="var(--text3)";
+  kmlFila=[];
+
+  for(const file of files){
+    try{
+      let xml;
+      const reader=new FileReader();
+      if(file.name.toLowerCase().endsWith(".kmz")){
+        xml=await new Promise((res,rej)=>{reader.onload=async e=>{
+          if(!window.JSZip){await new Promise((r,j)=>{const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";s.onload=r;s.onerror=j;document.head.appendChild(s);});}
+          const zip=await JSZip.loadAsync(e.target.result);
+          const kmlFile=Object.values(zip.files).find(f=>f.name.endsWith(".kml"));
+          if(!kmlFile)throw new Error("KMZ sem KML interno");
+          res(await kmlFile.async("text"));
+        };reader.onerror=rej;reader.readAsArrayBuffer(file);});
+      } else {
+        xml=await new Promise((res,rej)=>{reader.onload=e=>res(e.target.result);reader.onerror=rej;reader.readAsText(file);});
+      }
+      const doc=new DOMParser().parseFromString(xml,"text/xml");
+      const nomeEl=doc.querySelector("Placemark name, Document name");
+      const nomeKml=nomeEl?.textContent?.trim()||file.name.replace(/\.(kml|kmz)$/i,"");
+      const coordEl=doc.querySelector("Polygon outerBoundaryIs LinearRing coordinates, Polygon coordinates, LineString coordinates, coordinates");
+      if(!coordEl)throw new Error("Sem polígono");
+      const coords=coordEl.textContent.trim().split(/\s+/).map(pt=>{const p=pt.split(",");return p.length<2?null:{lng:parseFloat(p[0]),lat:parseFloat(p[1])};}).filter(p=>p&&!isNaN(p.lat)&&!isNaN(p.lng));
+      if(coords.length<3)throw new Error("Polígono inválido");
+      kmlFila.push({nome:nomeKml,coords,haCalc:calcHa(coords).toFixed(2),arquivo:file.name,ok:true});
+    }catch(err){
+      kmlFila.push({nome:file.name,arquivo:file.name,ok:false,erro:err.message});
+    }
+  }
+
+  // se só 1 arquivo, fluxo normal
+  if(files.length===1 && kmlFila[0]?.ok){
+    geoPoligono=kmlFila[0];
+    const s=kmlFila[0];
+    document.getElementById("geo-ha").textContent=s.haCalc;
+    document.getElementById("geo-pts").textContent=s.coords.length;
+    document.getElementById("geo-nome-kml").textContent=s.nome;
+    document.getElementById("geo-info").style.display="block";
+    document.getElementById("geo-map-empty").style.display="none";
+    document.getElementById("geo-next").disabled=false;
+    status.textContent="✓ Polígono carregado";status.style.color="var(--accent)";
+    initGeoMap();
+    if(geoLayer)geoLeafletMap.removeLayer(geoLayer);
+    geoLayer=L.polygon(s.coords.map(c=>[c.lat,c.lng]),{color:"#5BC8F0",weight:2.5,fillColor:"#5BC8F0",fillOpacity:0.15}).addTo(geoLeafletMap);
+    geoLeafletMap.fitBounds(geoLayer.getBounds(),{padding:[20,20]});
+    setTimeout(()=>geoLeafletMap.invalidateSize(),100);
+    return;
+  }
+
+  // múltiplos arquivos: mostra painel de cadastro em lote
+  mostrarPainelLote();
+}
+
+function lerKML(event){ lerKMLMultiplo(event); }
+
+function mostrarPainelLote(){
+  const ok=kmlFila.filter(k=>k.ok);
+  const err=kmlFila.filter(k=>!k.ok);
+  const agros=USERS.filter(u=>u.role==="agronomo");
+  const agroOpts=`<option value="">— Responsável —</option>`+agros.map(u=>`<option value="${u.user}">${u.nome}</option>`).join("");
+
+  let html=`<div style="position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:8000;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;" id="painel-lote">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;width:100%;max-width:560px;padding:24px;">
+    <div style="font-family:var(--font-head);font-size:22px;font-weight:800;margin-bottom:4px;">Cadastro em lote</div>
+    <div style="font-family:var(--font-mono);font-size:13px;color:var(--text3);margin-bottom:20px;">${ok.length} área(s) prontas · ${err.length} com erro</div>`;
+
+  ok.forEach((k,i)=>{
+    html+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <span style="font-family:var(--font-head);font-size:16px;font-weight:700;flex:1;">${k.nome}</span>
+        <span style="font-family:var(--font-mono);font-size:11px;color:var(--text3);">${k.haCalc} ha · ${k.coords.length} pts</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <input id="lote-nome-${i}" value="${k.nome}" placeholder="Nome do talhão" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-size:14px;font-family:var(--font-body);">
+        <input id="lote-fazenda-${i}" placeholder="Fazenda" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-size:14px;font-family:var(--font-body);">
+        ${currentUser?.role==="admin"?`<select id="lote-resp-${i}" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-size:14px;font-family:var(--font-body);">${agroOpts}</select>`:`<div></div>`}
+        <select id="lote-cultura-${i}" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:8px;color:var(--text);font-size:14px;font-family:var(--font-body);">
+          <option value="">Cultura...</option><option>Soja</option><option>Milho</option><option>Trigo</option><option>Feijão</option><option>Canola</option><option>Aveia</option><option>Sorgo</option><option>Outra</option>
+        </select>
+      </div>
+    </div>`;
+  });
+
+  if(err.length){
+    html+=`<div style="background:rgba(224,82,82,.1);border:1px solid rgba(224,82,82,.3);border-radius:8px;padding:12px;margin-bottom:10px;font-family:var(--font-mono);font-size:12px;color:var(--danger);">
+      <b>Arquivos com erro:</b><br>${err.map(e=>`${e.arquivo}: ${e.erro}`).join("<br>")}
+    </div>`;
+  }
+
+  html+=`<div style="display:flex;gap:10px;margin-top:8px;">
+    <button onclick="fecharPainelLote()" class="btn btn-ghost" style="flex:1;">Cancelar</button>
+    <button onclick="salvarLote()" class="btn btn-primary" style="flex:2;"><i class="ti ti-check"></i> Salvar ${ok.length} área(s)</button>
+  </div></div></div>`;
+
+  document.body.insertAdjacentHTML("beforeend",html);
+}
+
+function fecharPainelLote(){
+  document.getElementById("painel-lote")?.remove();
+  kmlFila=[];
+}
+
+async function salvarLote(){
+  const ok=kmlFila.filter(k=>k.ok);
+  const btn=document.querySelector("#painel-lote .btn-primary");
+  if(btn){btn.disabled=true;btn.textContent="Salvando...";}
+  let salvos=0;
+  for(let i=0;i<ok.length;i++){
+    const k=ok[i];
+    const nome=document.getElementById(`lote-nome-${i}`)?.value||k.nome;
+    const fazenda=document.getElementById(`lote-fazenda-${i}`)?.value||"";
+    const cultura=document.getElementById(`lote-cultura-${i}`)?.value||"";
+    const respEl=document.getElementById(`lote-resp-${i}`);
+    const responsavel=respEl?.value||"";
+    const ownerUser=(currentUser?.role==="admin"&&responsavel)?responsavel:currentUser?.user;
+    const a={nome,fazenda,cultura,municipio:"",safra:"2025/2026",cultivar:"",ha:k.haCalc,estadio:"",pop:"",semeadura:"",objetivos:[],obs:"",data:new Date().toLocaleDateString("pt-BR"),id:Date.now()+(i*10),poligono:k.coords,owner:ownerUser,ownerNome:USERS.find(u=>u.user===ownerUser)?.nome||ownerUser};
+    // se é para o próprio usuário, adiciona na lista local
+    if(ownerUser===currentUser?.user){areas.push(a);salvarAreasLocal();}
+    try{await dbSalvarArea(a);salvos++;}catch(e){console.warn("Firebase offline",e);}
+    await new Promise(r=>setTimeout(r,200)); // pequena pausa entre salvamentos
+  }
+  fecharPainelLote();
+  renderAreas();
+  mostrarToast(`✓ ${salvos} área(s) salva(s) com sucesso`);
+}
+let geoPoligono=null,geoLeafletMap=null,geoLayer=null;
+
+function initGeoMap(){
+  if(geoLeafletMap)return;
+  geoLeafletMap=L.map('geo-map',{zoomControl:true,attributionControl:false});
+  addSatTiles(geoLeafletMap);
+}
+
+function calcHa(coords){
+  if(coords.length<3)return 0;
+  let area=0;const R=6371000;const n=coords.length;
+  for(let i=0;i<n;i++){
+    const j=(i+1)%n;
+    const xi=coords[i].lng*Math.PI/180*R*Math.cos(coords[i].lat*Math.PI/180),yi=coords[i].lat*Math.PI/180*R;
+    const xj=coords[j].lng*Math.PI/180*R*Math.cos(coords[j].lat*Math.PI/180),yj=coords[j].lat*Math.PI/180*R;
+    area+=xi*yj-xj*yi;
+  }
+  return Math.abs(area/2/10000);
+}
+
+function lerKML(event){
+  const file=event.target.files[0];if(!file)return;
+  const status=document.getElementById("geo-status");
+  status.textContent="Lendo arquivo...";status.style.color="var(--text3)";
+  const reader=new FileReader();
+  reader.onload=async(e)=>{
+    try{
+      let xml=e.target.result;
+      if(file.name.toLowerCase().endsWith(".kmz")){
+        if(!window.JSZip){await new Promise((res,rej)=>{const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
+        const zip=await JSZip.loadAsync(e.target.result);
+        const kmlFile=Object.values(zip.files).find(f=>f.name.endsWith(".kml"));
+        if(!kmlFile)throw new Error("KMZ sem arquivo KML interno");
+        xml=await kmlFile.async("text");
+      }
+      const doc=new DOMParser().parseFromString(xml,"text/xml");
+      const nomeEl=doc.querySelector("Placemark name, Document name");
+      const nomeKml=nomeEl?.textContent?.trim()||file.name.replace(/\.(kml|kmz)$/i,"");
+      const coordEl=doc.querySelector("Polygon outerBoundaryIs LinearRing coordinates, Polygon coordinates, LineString coordinates, coordinates");
+      if(!coordEl)throw new Error("Nenhum polígono encontrado no arquivo");
+      const coords=coordEl.textContent.trim().split(/\s+/).map(pt=>{const p=pt.split(",");return p.length<2?null:{lng:parseFloat(p[0]),lat:parseFloat(p[1])};}).filter(p=>p&&!isNaN(p.lat)&&!isNaN(p.lng));
+      if(coords.length<3)throw new Error("Polígono com menos de 3 vértices");
+      const haCalc=calcHa(coords);
+      geoPoligono={coords,nome:nomeKml,haCalc:haCalc.toFixed(2)};
+      document.getElementById("geo-ha").textContent=haCalc.toFixed(2);
+      document.getElementById("geo-pts").textContent=coords.length;
+      document.getElementById("geo-nome-kml").textContent=nomeKml;
+      document.getElementById("geo-info").style.display="block";
+      document.getElementById("geo-map-empty").style.display="none";
+      document.getElementById("geo-next").disabled=false;
+      status.textContent="✓ Polígono carregado";status.style.color="var(--accent)";
+      initGeoMap();
+      if(geoLayer)geoLeafletMap.removeLayer(geoLayer);
+      geoLayer=L.polygon(coords.map(c=>[c.lat,c.lng]),{color:"#5BC8F0",weight:2.5,opacity:1,fillColor:"#5BC8F0",fillOpacity:0.15}).addTo(geoLeafletMap);
+      geoLeafletMap.fitBounds(geoLayer.getBounds(),{padding:[20,20]});
+      setTimeout(()=>geoLeafletMap.invalidateSize(),100);
+    }catch(err){status.textContent="Erro: "+err.message;status.style.color="var(--danger)";}
+  };
+  if(file.name.toLowerCase().endsWith(".kmz"))reader.readAsArrayBuffer(file);
+  else reader.readAsText(file);
+}
+
+function irParaCadastro(){
+  if(!geoPoligono)return;
+  if(geoPoligono.haCalc)document.getElementById("f-ha").value=geoPoligono.haCalc;
+  if(geoPoligono.nome)document.getElementById("f-nome").value=geoPoligono.nome;
+  // campo responsável: só aparece para admin
+  const wrap=document.getElementById("f-responsavel-wrap");
+  const sel=document.getElementById("f-responsavel");
+  if(currentUser?.role==="admin"&&wrap&&sel){
+    wrap.style.display="block";
+    const agros=USERS.filter(u=>u.role==="agronomo");
+    sel.innerHTML=`<option value="">— Selecione o agrônomo —</option>`+
+      agros.map(u=>`<option value="${u.user}">${u.nome}</option>`).join("");
+  }
+  showScreen("scr-nova-area");
+}
+
+// ── DESKTOP ──────────────────────────────────────────
+const IS_DT=()=>window.innerWidth>=1024;
+
+function dtSetup(){
+  if(!IS_DT())return;
+  const tb=document.getElementById("dt-topbar");if(tb)tb.style.display="flex";
+  if(currentUser){
+    const n=document.getElementById("dt-user-name");if(n)n.textContent=currentUser.nome||currentUser.user;
+    const a=document.getElementById("dtnav-admin");if(a)a.style.display=currentUser.role==="admin"?"flex":"none";
+    const da=document.getElementById("dt-admin-user");if(da)da.textContent=currentUser.nome||currentUser.user;
+  }
+  // mostra layout desktop admin
+  const adtl=document.getElementById("admin-dt-layout");if(adtl)adtl.style.cssText="display:grid;";
+  const amob=document.getElementById("admin-hdr-mobile");if(amob)amob.style.display="none";
+  const amobs=document.getElementById("admin-mobile-scroll");if(amobs)amobs.style.display="none";
+  // mostra layout desktop vistoria
+  const vdtl=document.getElementById("vis-dt-layout");if(vdtl)vdtl.style.cssText="display:grid;";
+  const vmob=document.getElementById("vis-mobile-layout");if(vmob)vmob.style.display="none";
+}
+
+function dtNavActive(id){
+  if(!IS_DT())return;
+  document.querySelectorAll(".dt-nav-btn").forEach(b=>b.classList.remove("active"));
+  const map={"scr-areas":"dtnav-areas","scr-geo":"dtnav-geo","scr-vistoria":"dtnav-vis","scr-report":"dtnav-rep","scr-admin":"dtnav-admin","scr-nova-area":"dtnav-geo"};
+  const el=document.getElementById(map[id]);if(el)el.classList.add("active");
+}
+
+function dtRenderAreas(){
+  if(!IS_DT())return;
+  // atualiza stats sidebar
+  ["ss-areas-dt","ss-vis-dt","ss-km-dt"].forEach((id,i)=>{
+    const el=document.getElementById(id);
+    if(el)el.textContent=[areas.length,stats.vis,stats.km.toFixed(1)][i];
+  });
+  const cnt=document.getElementById("dt-areas-count");if(cnt)cnt.textContent=areas.length+" área"+(areas.length!==1?"s":"");
+  const grid=document.getElementById("dt-areas-grid");
+  const empty=document.getElementById("dt-areas-empty");
+  if(!grid)return;
+  if(!areas.length){if(empty)empty.style.display="flex";grid.innerHTML="";return;}
+  if(empty)empty.style.display="none";
+  grid.innerHTML=areas.map((a,i)=>`<div class="dt-area-card" onclick="abrirVistoria(${i})">
+    <div class="dt-area-top"><div class="dt-area-icon">${CICONS[a.cultura]||"🌿"}</div><div><div class="dt-area-name">${a.nome}</div><div class="dt-area-sub">${a.fazenda||"—"}${a.municipio?" · "+a.municipio:""}</div></div></div>
+    <div class="dt-area-tags">${a.cultura?`<span class="dt-tag accent">${a.cultura}</span>`:""}${a.ha?`<span class="dt-tag">${a.ha} ha</span>`:""}${a.safra?`<span class="dt-tag">${a.safra}</span>`:""}${a.poligono?`<span class="dt-tag accent">📐 KML</span>`:""}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;font-family:var(--font-mono);font-size:11px;color:var(--text3);">
+      <span style="color:var(--accent);">→ Iniciar vistoria</span>
+      <button onclick="confirmarExcluirArea(${i},event)" style="background:none;border:1px solid rgba(224,82,82,.3);border-radius:4px;padding:3px 7px;cursor:pointer;color:var(--danger);"><i class="ti ti-trash" style="font-size:13px;"></i></button>
+    </div></div>`).join("");
+}
+
+// Admin desktop
+const _origRendAdmin=renderAdmin;
+renderAdmin=async function(){
+  await _origRendAdmin();
+  if(!IS_DT())return;
+  const main=document.getElementById("dt-admin-main");if(!main)return;
+  const agros=USERS.filter(u=>u.role==="agronomo");
+  const fdEl=document.getElementById("admin-filtros-dt");
+  if(fdEl)fdEl.innerHTML=`<div class="dt-sidebar-item ${!adminFiltro?"active":""}" onclick="adminFiltro=null;renderAdmin()"><i class="ti ti-users"></i>Todos</div>`+
+    agros.map(u=>`<div class="dt-sidebar-item ${adminFiltro===u.user?"active":""}" onclick="adminFiltro='${u.user}';renderAdmin()"><i class="ti ti-user"></i>${u.nome}</div>`).join("");
+  const allAreas=await dbCarregarAreas(adminFiltro).catch(()=>[]);
+  const allVis=await dbCarregarVistorias(adminFiltro).catch(()=>[]);
+  const logs=await dbCarregarLogsGeofence().catch(()=>[]);
+  const logsFilt=adminFiltro?logs.filter(l=>l.owner===adminFiltro):logs;
+  const totalKm=allVis.reduce((s,v)=>s+parseFloat(v.distKm||0),0);
+  const totalPts=allVis.reduce((s,v)=>s+parseInt(v.pontos||0),0);
+  main.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <h2 style="font-family:var(--font-head);font-size:24px;font-weight:800;">PAINEL ADMINISTRATIVO</h2>
+      <button onclick="adminIrAoCampo()" class="btn btn-primary"><i class="ti ti-map-pin"></i> IR AO CAMPO</button>
+    </div>
+    <div class="dt-stat-grid">${[{l:"Áreas",v:allAreas.length,i:"ti-map-2"},{l:"Vistorias",v:allVis.length,i:"ti-route"},{l:"km total",v:totalKm.toFixed(1),i:"ti-trending-up"},{l:"Pontos",v:totalPts,i:"ti-map-pin"}].map(x=>`<div class="dt-stat-card"><i class="ti ${x.i}" style="font-size:22px;color:var(--text3);margin-bottom:8px;"></i><div class="dt-stat-v">${x.v}</div><div class="dt-stat-l">${x.l}</div></div>`).join("")}</div>
+    <div class="dt-admin-map" id="admin-map-dt"></div>
+    ${logsFilt.length?`<div class="dt-panel" style="margin-bottom:16px;"><div class="dt-panel-hd danger"><i class="ti ti-alert-triangle"></i> ALERTAS (${logsFilt.length})</div>${logsFilt.map(l=>`<div style="padding:12px 16px;border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:12px;"><div style="color:var(--danger);font-weight:700;">FORA DA ÁREA</div><div style="color:var(--text3);">${l.area} · 👤 ${l.nomeOwner||l.owner} · ${l.data}</div></div>`).join("")}</div>`:""}
+    <div class="dt-admin-panels">
+      <div class="dt-panel"><div class="dt-panel-hd"><i class="ti ti-map-2"></i> ÁREAS</div>${!allAreas.length?`<div style="padding:14px;font-family:var(--font-mono);font-size:13px;color:var(--text3);">Nenhuma.</div>`:allAreas.map(a=>`<div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);"><div style="font-size:20px;">${CICONS[a.cultura]||"🌿"}</div><div><div style="font-family:var(--font-head);font-size:15px;font-weight:700;">${a.nome}</div><div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);">${a.cultura||"—"} · 👤 ${USERS.find(u=>u.user===a.owner)?.nome||a.owner||"—"}</div></div></div>`).join("")}</div>
+      <div class="dt-panel"><div class="dt-panel-hd"><i class="ti ti-route"></i> VISTORIAS</div>${!allVis.length?`<div style="padding:14px;font-family:var(--font-mono);font-size:13px;color:var(--text3);">Nenhuma.</div>`:allVis.map(v=>`<div style="padding:12px 16px;border-bottom:1px solid var(--border);"><div style="display:flex;justify-content:space-between;"><div style="font-family:var(--font-head);font-size:15px;font-weight:700;">${v.area}</div><div style="display:flex;gap:6px;align-items:center;"><span style="font-family:var(--font-mono);font-size:11px;color:var(--text3);">${v.data}</span><button onclick="confirmarExcluirVistoria(${v.id})" style="background:none;border:1px solid rgba(224,82,82,.3);border-radius:4px;padding:2px 6px;cursor:pointer;color:var(--danger);"><i class="ti ti-trash" style="font-size:12px;"></i></button>${v.kmlSalvo?`<button onclick="baixarKMLFirestore(${v.id})" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;cursor:pointer;color:var(--accent);font-family:var(--font-mono);font-size:11px;">KML</button>`:""}</div></div><div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);">📍 ${v.distKm}km · 📌 ${v.pontos}pts · 👤 ${v.nomeOwner||v.owner||"—"}</div></div>`).join("")}</div>
+    </div>`;
+  setTimeout(()=>{
+    const mapEl=document.getElementById("admin-map-dt");if(!mapEl)return;
+    if(window._adminMapDt){window._adminMapDt.remove();window._adminMapDt=null;}
+    const rm=L.map(mapEl,{zoomControl:true,attributionControl:false});window._adminMapDt=rm;addSatTiles(rm);
+    const allLls=[];
+    allAreas.forEach(a=>{if(a.poligono?.length>2){const lls=a.poligono.map(c=>[c.lat,c.lng]);L.polygon(lls,{color:"#5BC8F0",weight:1.5,fillColor:"#5BC8F0",fillOpacity:.06,dashArray:"4,3"}).bindTooltip(a.nome).addTo(rm);lls.forEach(ll=>allLls.push(ll));}});
+    const cores=["#5BC8F0","#F5A623","#5DC98A","#E05252","#BF5AF2"];
+    allVis.forEach((v,vi)=>{if(v.track?.length>1){const lls=v.track.map(p=>[p.lat,p.lng]);const cor=cores[vi%cores.length];L.polyline(lls,{color:cor,weight:2.5}).bindTooltip(`${v.area} · ${v.nomeOwner||v.owner}`,{sticky:true}).addTo(rm);lls.forEach(ll=>allLls.push(ll));}});
+    if(allLls.length>0)rm.fitBounds(L.latLngBounds(allLls),{padding:[20,20]});else rm.setView(DEFAULT_CENTER,13);
+    rm.invalidateSize();
+  },200);
+};
+
+// Monta grid de áreas desktop na tela
+function dtMontarAreasLayout(){
+  if(!IS_DT()||document.getElementById("dt-areas-layout"))return;
+  const scr=document.getElementById("scr-areas");if(!scr)return;
+  scr.querySelector(".hero")?.style.setProperty("display","none");
+  const layout=document.createElement("div");layout.id="dt-areas-layout";layout.className="dt-areas-layout";
+  layout.innerHTML=`<aside class="dt-areas-sidebar"><div style="margin-bottom:14px;"><button onclick="showScreen('scr-geo')" class="btn btn-primary btn-full"><i class="ti ti-plus"></i> NOVA ÁREA</button></div><div style="font-family:var(--font-mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;">ESTATÍSTICAS</div><div style="display:flex;flex-direction:column;gap:10px;">${[{l:"Áreas",id:"ss-areas-dt"},{l:"Vistorias",id:"ss-vis-dt"},{l:"km",id:"ss-km-dt"}].map(x=>`<div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-family:var(--font-mono);font-size:12px;color:var(--text3);">${x.l}</span><span style="font-family:var(--font-head);font-size:20px;font-weight:800;color:var(--accent);" id="${x.id}">0</span></div>`).join("")}</div></aside><main class="dt-areas-main"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;"><h2 style="font-family:var(--font-head);font-size:22px;font-weight:800;">ÁREAS CADASTRADAS</h2><span style="font-family:var(--font-mono);font-size:12px;color:var(--text3);" id="dt-areas-count"></span></div><div id="dt-areas-empty" class="empty" style="display:none;"><i class="ti ti-map-off"></i><div class="empty-t">Nenhuma área ainda</div><div class="empty-s">Clique em "Nova Área" para começar</div></div><div class="dt-areas-grid" id="dt-areas-grid"></div></main>`;
+  scr.appendChild(layout);
+}
+
+// Hook showScreen
+window.addEventListener("resize",()=>{if(lmap)lmap.invalidateSize();if(window._adminMapDt)window._adminMapDt.invalidateSize();if(geoLeafletMap)geoLeafletMap.invalidateSize();});
 </script>
 
 <!-- Tutorial HTML (fora do #app para ficar acima de tudo) -->
