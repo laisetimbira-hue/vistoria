@@ -2982,6 +2982,8 @@ const TUT_STEPS = [
 let tutStep=0, tutAtivo=false;
 
 function tutVerificarPrimeiroAcesso(user){
+  // limpa chaves antigas de formato diferente
+  ["tut_visto_"+user, "tut_seen_"+user].forEach(k=>localStorage.removeItem(k));
   const key=`tut_done_${user}`;
   if(!localStorage.getItem(key)){
     setTimeout(()=>tutIniciar(user), 800);
@@ -3083,6 +3085,13 @@ function tutReiniciar(){
   if(currentUser) localStorage.removeItem(`tut_done_${currentUser.user}`);
   tutIniciar(currentUser?.user);
 }
+
+// ── RESET TUTORIAL PARA TODOS OS USUÁRIOS ────────────
+// Zera para forçar o tutorial aparecer novamente para todos
+USERS.forEach(u=>{
+  localStorage.removeItem(`tut_done_${u.user}`);
+  localStorage.removeItem(`tut_visto_${u.user}`);
+});
 
 if('serviceWorker' in navigator){
   // Só registra no GitHub Pages (HTTPS) — evita erro em outros ambientes
