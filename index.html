@@ -217,7 +217,71 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 ::-webkit-scrollbar-track{background:var(--surface);}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 
-/* ── VISTORIA MOBILE FULLSCREEN (Strava/Komoot style) ── */
+/* ── TUTORIAL ─────────────────────────────────────── */
+.tut-overlay{
+  position:fixed;inset:0;z-index:9000;pointer-events:none;
+}
+.tut-backdrop{
+  position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:9001;
+  transition:opacity .3s;
+}
+.tut-highlight{
+  position:fixed;z-index:9002;border-radius:10px;
+  box-shadow:0 0 0 4000px rgba(0,0,0,0.72);
+  transition:all .35s cubic-bezier(.4,0,.2,1);
+  pointer-events:none;
+}
+.tut-card{
+  position:fixed;z-index:9003;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:16px;padding:22px 20px 18px;
+  width:calc(100% - 32px);max-width:360px;
+  box-shadow:0 8px 40px rgba(0,0,0,.6);
+  animation:tutIn .3s cubic-bezier(.32,0,.67,0);
+}
+@keyframes tutIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.tut-step-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(91,200,240,0.12);border:1px solid rgba(91,200,240,0.3);
+  border-radius:20px;padding:3px 12px;margin-bottom:12px;
+  font-family:var(--font-mono);font-size:11px;color:var(--accent);letter-spacing:.5px;
+}
+.tut-title{
+  font-family:var(--font-head);font-size:22px;font-weight:800;
+  color:var(--text);letter-spacing:.3px;margin-bottom:8px;
+}
+.tut-desc{
+  font-family:var(--font-body);font-size:15px;color:var(--text3);
+  line-height:1.6;margin-bottom:18px;
+}
+.tut-desc b{color:var(--text);}
+.tut-actions{display:flex;gap:10px;align-items:center;}
+.tut-btn-next{
+  flex:1;padding:12px;border-radius:10px;border:none;cursor:pointer;
+  background:var(--accent);color:#071826;
+  font-family:var(--font-head);font-size:16px;font-weight:700;letter-spacing:.3px;
+}
+.tut-btn-next:active{filter:brightness(.9);}
+.tut-btn-skip{
+  background:none;border:none;cursor:pointer;
+  font-family:var(--font-mono);font-size:12px;color:var(--text3);
+  padding:8px;text-decoration:underline;
+}
+.tut-dots{display:flex;gap:6px;align-items:center;margin-right:auto;}
+.tut-dot{width:6px;height:6px;border-radius:50%;background:var(--border);transition:.2s;}
+.tut-dot.active{background:var(--accent);width:18px;border-radius:3px;}
+.tut-icon-big{
+  font-size:48px;text-align:center;display:block;margin-bottom:12px;
+  animation:tutBob 2s ease-in-out infinite;
+}
+@keyframes tutBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.tut-arrow{
+  position:fixed;z-index:9004;color:var(--accent);font-size:32px;
+  animation:tutArrow 1s ease-in-out infinite;
+  pointer-events:none;
+}
+@keyframes tutArrow{0%,100%{transform:translateY(0)}50%{transform:translateY(8px)}}
+
 @media(max-width:1023px){
   #scr-vistoria{position:relative;overflow:hidden;}
 
@@ -673,10 +737,49 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
   .dt-report-data-col{width:520px;}
   .dt-areas-sidebar{width:320px;}
 }
+/* ── TUTORIAL ── */
+.tut-overlay{position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0);pointer-events:none;transition:background .4s;}
+.tut-overlay.active{background:rgba(0,0,0,0.75);pointer-events:all;}
+.tut-card{position:fixed;z-index:9001;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;width:calc(100% - 32px);max-width:380px;box-shadow:0 8px 40px rgba(0,0,0,.6);opacity:0;transition:all .3s cubic-bezier(.32,0,.67,0);pointer-events:all;}
+.tut-card.show{opacity:1;}
+.tut-card-bottom{bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);}
+.tut-card-bottom.show{transform:translateX(-50%) translateY(0);}
+.tut-card-center{top:50%;left:50%;transform:translate(-50%,-40%);}
+.tut-card-center.show{transform:translate(-50%,-50%);}
+.tut-step{font-family:var(--font-mono);font-size:11px;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
+.tut-icon{font-size:36px;margin-bottom:12px;display:block;}
+.tut-title{font-family:var(--font-head);font-size:22px;font-weight:800;color:var(--text);margin-bottom:8px;}
+.tut-body{font-family:var(--font-mono);font-size:13px;color:var(--text3);line-height:1.7;margin-bottom:20px;}
+.tut-body b{color:var(--text);font-weight:600;}
+.tut-dots{display:flex;gap:6px;justify-content:center;margin-bottom:16px;}
+.tut-dot{width:7px;height:7px;border-radius:50%;background:var(--border);transition:.2s;}
+.tut-dot.active{background:var(--accent);width:20px;border-radius:4px;}
+.tut-btns{display:flex;gap:8px;}
+.tut-btn-skip{background:transparent;border:1px solid var(--border);border-radius:var(--radius);padding:10px 16px;font-family:var(--font-mono);font-size:13px;color:var(--text3);cursor:pointer;flex:1;}
+.tut-btn-next{background:var(--accent);border:none;border-radius:var(--radius);padding:10px 20px;font-family:var(--font-head);font-size:16px;font-weight:700;color:#071826;cursor:pointer;flex:2;display:flex;align-items:center;justify-content:center;gap:8px;}
+.tut-btn-next:active{filter:brightness(.9);}
+.tut-highlight{position:relative;z-index:9002;box-shadow:0 0 0 4px var(--accent),0 0 0 12px rgba(91,200,240,0.15);border-radius:var(--radius);animation:tutPulse 1.5s infinite;}
+@keyframes tutPulse{0%,100%{box-shadow:0 0 0 4px var(--accent),0 0 0 12px rgba(91,200,240,0.15);}50%{box-shadow:0 0 0 4px var(--accent),0 0 0 18px rgba(91,200,240,0);}}
 </style>
 </head>
 <body>
 <div id="app">
+
+<!-- TUTORIAL OVERLAY -->
+<div class="tut-overlay" id="tut-overlay" style="display:none;"></div>
+<div style="position:fixed;inset:0;z-index:9001;pointer-events:none;" id="tut-highlight"></div>
+<div style="position:fixed;z-index:9003;font-size:28px;pointer-events:none;animation:tutPulse 1s infinite;display:none;" id="tut-arrow">⬆️</div>
+<div class="tut-card" id="tut-card" style="left:16px;right:16px;bottom:24px;">
+  <div class="tut-step" id="tut-badge-txt">PASSO 1 DE 10</div>
+  <span class="tut-icon" id="tut-icon">🌱</span>
+  <div class="tut-title" id="tut-title">Bem-vindo!</div>
+  <div class="tut-body" id="tut-desc"></div>
+  <div class="tut-dots" id="tut-dots"></div>
+  <div class="tut-btns">
+    <button class="tut-btn-skip" onclick="tutPular()">PULAR</button>
+    <button class="tut-btn-next" id="tut-btn-next" onclick="tutProximo()">PRÓXIMO →</button>
+  </div>
+</div>
 
 <!-- TOPBAR DESKTOP (oculta no mobile via JS) -->
 <div class="dt-topbar" id="dt-topbar" style="display:none;">
@@ -749,6 +852,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
         <div class="dt-sidebar-section">CAMPO</div>
         <div class="dt-sidebar-item" onclick="adminIrAoCampo()"><i class="ti ti-map-pin"></i>Ir ao Campo</div>
         <div class="dt-sidebar-item" onclick="precacheMapa()"><i class="ti ti-wifi-off"></i>Salvar mapa offline</div>
+        <div class="dt-sidebar-item" onclick="tutReiniciar()"><i class="ti ti-school"></i>Rever tutorial</div>
       </nav>
       <div style="padding:12px 8px;border-top:1px solid var(--border);">
         <div style="font-family:var(--font-mono);font-size:10px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;padding:0 12px 8px;">FILTRAR POR</div>
@@ -1026,6 +1130,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
     <div class="mob-extra-item" onclick="exportKML();fecharExtra()"><i class="ti ti-download"></i> Exportar KML</div>
     <div class="mob-extra-item" onclick="exportTXT();fecharExtra()"><i class="ti ti-file-text"></i> Exportar TXT</div>
     <div class="mob-extra-item" onclick="precacheMapa();fecharExtra()"><i class="ti ti-wifi-off"></i> Salvar mapa offline<span id="precache-status" style="font-size:10px;color:var(--text3);display:block;margin-top:2px;"></span></div>
+    <div class="mob-extra-item" onclick="tutReiniciar();fecharExtra()"><i class="ti ti-help-circle"></i> Ver tutorial</div>
+    <div class="mob-extra-item" onclick="tutReiniciar();fecharExtra()"><i class="ti ti-school"></i> Rever tutorial</div>
     <div class="mob-extra-item danger" onclick="finalizarVistoria();fecharExtra()"><i class="ti ti-flag-3"></i> Finalizar vistoria</div>
   </div>
 
@@ -1217,6 +1323,23 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
   </div>
 </div>
 
+<!-- TUTORIAL PRIMEIRO ACESSO -->
+<div id="tut-overlay" style="display:none;position:fixed;inset:0;z-index:9000;">
+  <div class="tut-highlight" id="tut-highlight"></div>
+  <div class="tut-card" id="tut-card" style="left:16px;right:16px;bottom:24px;">
+    <div class="tut-step-badge"><i class="ti ti-school" style="font-size:13px;"></i><span id="tut-badge-txt">TUTORIAL</span></div>
+    <span class="tut-icon-big" id="tut-icon">🌱</span>
+    <div class="tut-title" id="tut-title">Bem-vindo ao AGRO BASE Field!</div>
+    <div class="tut-desc" id="tut-desc">Vamos te mostrar como usar o sistema em menos de 2 minutos.</div>
+    <div class="tut-actions">
+      <div class="tut-dots" id="tut-dots"></div>
+      <button class="tut-btn-skip" onclick="tutPular()">Pular</button>
+      <button class="tut-btn-next" id="tut-btn-next" onclick="tutProximo()">Começar →</button>
+    </div>
+  </div>
+  <div class="tut-arrow" id="tut-arrow" style="display:none;"><i class="ti ti-arrow-down"></i></div>
+</div>
+
 <!-- Firebase -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -1266,6 +1389,7 @@ const USERS=[
   {user:"admin",  pass:"1234",  role:"admin",    nome:"Administrador"},
   {user:"agro1",  pass:"1234",  role:"agronomo", nome:"Agrônomo 1"},
   {user:"agro2",  pass:"1234",  role:"agronomo", nome:"Agrônomo 2"},
+  {user:"ruan",   pass:"scv",   role:"agronomo", nome:"Ruan"},
 ];
 
 // ── LOGIN ────────────────────────────────────────────
@@ -1287,8 +1411,10 @@ function doLogin(){
     err.textContent="";
     currentUser=ok;
     sessionStorage.setItem("abf_auth", JSON.stringify(ok));
-    if(ok.role==="admin") showScreen("scr-admin");
+    if(ok.role==="admin"){ showScreen("scr-admin"); }
     else { carregarAreasUsuario(); showScreen("scr-areas"); }
+    // verifica primeiro acesso
+    tutVerificarPrimeiroAcesso(ok.user);
   } else {
     err.textContent="Usuário ou senha incorretos.";
     document.getElementById("l-pass").value="";
@@ -2799,29 +2925,189 @@ async function renderAdmin(){
 async function filtrarAdmin(user){adminFiltro=user;await renderAdmin();}
 async function adminIrAoCampo(){await carregarAreasUsuario();showScreen("scr-areas");}
 
-// ── SERVICE WORKER ────────────────────────────────────
-if('serviceWorker' in navigator){
-  window.addEventListener('load', async ()=>{
-    try{
-      const reg = await navigator.serviceWorker.register('./sw.js');
-      console.log('[SW] Registrado:', reg.scope);
+// ── TUTORIAL PRIMEIRO ACESSO ─────────────────────────
+const TUT_STEPS = [
+  {
+    icon:"🌱", titulo:"Bem-vindo ao AGRO BASE Field!",
+    desc:"Sistema de <b>vistoria agronômica</b> com GPS, geofence e relatórios automáticos. Vamos te guiar pelo app!",
+    tela:null, alvo:null, pos:"center"
+  },
+  {
+    icon:"📋", titulo:"Tela inicial — Suas Áreas",
+    desc:"Aqui ficam todas as suas <b>áreas cadastradas</b>. Cada área representa um talhão ou gleba que você vai vistoriar.",
+    tela:"scr-areas", alvo:null, pos:"center"
+  },
+  {
+    icon:"📐", titulo:"1º Passo: Cadastrar uma Área",
+    desc:"Toque em <b>+ NOVA ÁREA</b> para começar. Você vai fazer upload do <b>KML do talhão</b> e preencher os dados da safra.",
+    tela:"scr-areas", alvo:"btn-nova-area-tut", pos:"top"
+  },
+  {
+    icon:"🗺️", titulo:"Upload do KML / KMZ",
+    desc:"Na tela de <b>Estrutura Geográfica</b>, faça upload do arquivo KML ou KMZ do talhão. O app vai desenhar o polígono no mapa e calcular a área em hectares automaticamente.",
+    tela:null, alvo:null, pos:"center"
+  },
+  {
+    icon:"🚶", titulo:"2º Passo: Iniciar a Vistoria",
+    desc:"Selecione uma área e toque no <b>botão ▶ (Iniciar)</b>. O GPS começa a rastrear seu caminhamento em tempo real.",
+    tela:null, alvo:null, pos:"center"
+  },
+  {
+    icon:"📍", titulo:"Marcar Pontos de Observação",
+    desc:"Durante o caminhamento, toque no <b>📍 para marcar pontos</b>: pragas, doenças, stand, produção e mais. Cada ponto fica georreferenciado com latitude, longitude e altitude.",
+    tela:null, alvo:null, pos:"center"
+  },
+  {
+    icon:"⚠️", titulo:"Geofence — Área Segura",
+    desc:"O app verifica se você está <b>dentro do talhão cadastrado</b> antes de iniciar. Se sair da área durante a vistoria, um alerta aparece automaticamente.",
+    tela:null, alvo:null, pos:"center"
+  },
+  {
+    icon:"📊", titulo:"Relatório e KML Automáticos",
+    desc:"Ao finalizar, o app gera o <b>relatório completo</b> e o <b>arquivo KML</b> com toda a rota e pontos — pronto para abrir no Google Earth.",
+    tela:null, alvo:null, pos:"center"
+  },
+  {
+    icon:"📡", titulo:"Funciona Offline!",
+    desc:"No menu <b>⋯ → Salvar mapa offline</b>, você pode cachear os tiles de satélite do talhão. Assim o mapa aparece mesmo <b>sem internet no campo</b>.",
+    tela:null, alvo:null, pos:"center"
+  },
+  {
+    icon:"✅", titulo:"Pronto para começar!",
+    desc:"Comece cadastrando sua primeira área. Qualquer dúvida, o tutorial fica disponível no menu. <b>Boas vistorias!</b>",
+    tela:null, alvo:null, pos:"center"
+  }
+];
 
-      // Escuta mensagens do SW (progresso de pré-cache)
-      navigator.serviceWorker.addEventListener('message', e=>{
-        if(e.data?.tipo==='PRECACHE_PROGRESS'){
-          const el=document.getElementById('precache-status');
-          if(el) el.textContent=`Cacheando... ${e.data.count} tiles`;
-        }
-        if(e.data?.tipo==='PRECACHE_DONE'){
-          const el=document.getElementById('precache-status');
-          if(el){el.textContent=`✓ ${e.data.count} tiles salvos para uso offline`;el.style.color='var(--accent)';}
-          mostrarToastSync(`✓ Mapa offline: ${e.data.count} tiles cacheados`);
-        }
-      });
-    }catch(e){
-      console.warn('[SW] Registro falhou:', e);
+let tutStep=0, tutAtivo=false;
+
+function tutVerificarPrimeiroAcesso(user){
+  const key=`tut_done_${user}`;
+  if(!localStorage.getItem(key)){
+    setTimeout(()=>tutIniciar(user), 800);
+  }
+}
+
+function tutIniciar(user){
+  tutStep=0;
+  tutAtivo=true;
+  document.getElementById("tut-overlay").style.display="block";
+  tutRenderStep();
+}
+
+function tutRenderStep(){
+  const s=TUT_STEPS[tutStep];
+  const total=TUT_STEPS.length;
+  const overlay=document.getElementById("tut-overlay");
+  const card=document.getElementById("tut-card");
+  const hl=document.getElementById("tut-highlight");
+  const arrow=document.getElementById("tut-arrow");
+
+  // textos
+  document.getElementById("tut-badge-txt").textContent=`PASSO ${tutStep+1} DE ${total}`;
+  document.getElementById("tut-icon").textContent=s.icon;
+  document.getElementById("tut-title").textContent=s.titulo;
+  document.getElementById("tut-desc").innerHTML=s.desc;
+
+  // botão
+  const btn=document.getElementById("tut-btn-next");
+  btn.textContent=tutStep===total-1?"Começar a usar →":"Próximo →";
+
+  // dots
+  const dots=document.getElementById("tut-dots");
+  dots.innerHTML=TUT_STEPS.map((_,i)=>`<div class="tut-dot ${i===tutStep?"active":""}"></div>`).join("");
+
+  // navega para a tela do step se necessário
+  if(s.tela && document.getElementById(s.tela)){
+    const scr=document.getElementById(s.tela);
+    if(!scr.classList.contains("active")){
+      document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));
+      scr.classList.add("active");
     }
-  });
+  }
+
+  // highlight de elemento
+  hl.style.cssText="";
+  arrow.style.display="none";
+
+  if(s.alvo){
+    const el=document.getElementById(s.alvo) || document.querySelector(`[data-tut="${s.alvo}"]`);
+    if(el){
+      const r=el.getBoundingClientRect();
+      const pad=8;
+      hl.style.cssText=`position:fixed;left:${r.left-pad}px;top:${r.top-pad}px;width:${r.width+pad*2}px;height:${r.height+pad*2}px;border-radius:10px;box-shadow:0 0 0 4000px rgba(0,0,0,0.72);z-index:9002;pointer-events:none;border:2px solid var(--accent);transition:all .35s cubic-bezier(.4,0,.2,1);`;
+      // seta apontando para o elemento
+      arrow.style.display="block";
+      arrow.style.left=(r.left+r.width/2-16)+"px";
+      arrow.style.top=(r.bottom+8)+"px";
+    }
+  } else {
+    // sem highlight — overlay escuro simples
+    hl.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:9001;pointer-events:none;";
+  }
+
+  // posiciona o card
+  card.style.cssText="left:16px;right:16px;";
+  if(s.pos==="top"){
+    card.style.top="80px";
+    card.style.bottom="auto";
+  } else {
+    card.style.bottom="24px";
+    card.style.top="auto";
+  }
+}
+
+function tutProximo(){
+  if(tutStep<TUT_STEPS.length-1){
+    tutStep++;
+    tutRenderStep();
+  } else {
+    tutConcluir();
+  }
+}
+
+function tutPular(){tutConcluir();}
+
+function tutConcluir(){
+  tutAtivo=false;
+  document.getElementById("tut-overlay").style.display="none";
+  // marca como visto para este usuário
+  if(currentUser) localStorage.setItem(`tut_done_${currentUser.user}`,"1");
+  // garante que está na tela de áreas
+  if(currentUser?.role==="admin") showScreen("scr-admin");
+  else showScreen("scr-areas");
+}
+
+// Botão para rever o tutorial (no menu extra da vistoria e admin)
+function tutReiniciar(){
+  if(currentUser) localStorage.removeItem(`tut_done_${currentUser.user}`);
+  tutIniciar(currentUser?.user);
+}
+
+if('serviceWorker' in navigator){
+  // Só registra no GitHub Pages (HTTPS) — evita erro em outros ambientes
+  const isGithubPages = location.hostname.endsWith('.github.io') || location.protocol === 'https:' && !location.hostname.includes('claude');
+  if(isGithubPages){
+    window.addEventListener('load', async ()=>{
+      try{
+        const reg = await navigator.serviceWorker.register('./sw.js');
+        console.log('[SW] Registrado:', reg.scope);
+        navigator.serviceWorker.addEventListener('message', e=>{
+          if(e.data?.tipo==='PRECACHE_PROGRESS'){
+            const el=document.getElementById('precache-status');
+            if(el) el.textContent=`Cacheando... ${e.data.count} tiles`;
+          }
+          if(e.data?.tipo==='PRECACHE_DONE'){
+            const el=document.getElementById('precache-status');
+            if(el){el.textContent=`✓ ${e.data.count} tiles salvos para uso offline`;el.style.color='var(--accent)';}
+            mostrarToastSync(`✓ Mapa offline: ${e.data.count} tiles cacheados`);
+          }
+        });
+      }catch(e){
+        // silencia erros de SW em ambientes não suportados
+      }
+    });
+  }
 }
 
 // Pré-cacheia tiles da área atual para uso offline
