@@ -456,7 +456,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
     <div id="admin-geofence" class="card" style="padding:0;margin:0 0 16px;"></div>
     <div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;">ÁREAS CADASTRADAS</div>
     <div id="admin-areas" class="card" style="padding:0;margin:0 0 16px;"></div>
-    <div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;">VISTORIAS REALIZADAS</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;">VISTORIAS REALIZADAS</div>
+      <button onclick="exportarExcel()" style="background:none;border:1px solid rgba(91,200,240,.3);border-radius:6px;padding:5px 12px;font-family:var(--font-mono);font-size:12px;color:var(--accent);cursor:pointer;display:flex;align-items:center;gap:6px;"><i class="ti ti-table-export" style="font-size:14px;"></i> Exportar Excel</button>
+    </div>
     <div id="admin-vistorias" class="card" style="padding:0;margin:0;"></div>
   </div>
 </div>
@@ -1387,7 +1390,43 @@ async function renderAdmin(){
     ?`<div style="padding:14px 16px;font-family:var(--font-mono);font-size:13px;color:var(--text3);">Nenhuma vistoria.</div>`
     :allVis.map(v=>`<div style="padding:13px 16px;border-bottom:1px solid var(--border);"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><div style="font-family:var(--font-head);font-size:16px;font-weight:700;">${v.area}</div><div style="display:flex;align-items:center;gap:6px;"><div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);">${v.data}</div><button onclick="confirmarExcluirVistoria(${v.id})" style="background:none;border:1px solid rgba(224,82,82,.3);border-radius:4px;padding:3px 7px;cursor:pointer;color:var(--danger);font-size:13px;display:flex;align-items:center;"><i class="ti ti-trash" style="font-size:13px;"></i></button></div></div><div style="font-family:var(--font-mono);font-size:12px;color:var(--text3);margin-top:3px;display:flex;flex-wrap:wrap;gap:8px;"><span>📍 ${v.distKm}km</span>${v.duracaoStr?`<span>⏱ ${v.duracaoStr}</span>`:""}<span>📌 ${v.pontos}pts</span>${v.ha?`<span>🌾 ${v.ha}ha</span>`:""}</div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;gap:8px;"><div style="font-family:var(--font-mono);font-size:12px;color:var(--accent);">👤 ${v.nomeOwner||v.owner||"—"} · ${v.horaInicio||""} → ${v.horaFim||""}</div>${v.kmlSalvo?`<button onclick="baixarKMLFirestore(${v.id})" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 10px;font-family:var(--font-mono);font-size:11px;color:var(--accent);cursor:pointer;display:flex;align-items:center;gap:4px;"><i class="ti ti-file-type-xml" style="font-size:13px;"></i> KML</button>`:""}</div></div>`).join("");
 }
-async function filtrarAdmin(user){adminFiltro=user;await renderAdmin();}
+async function exportarExcel(){
+  const allVis=await dbCarregarVistorias(adminFiltro);
+  if(!allVis.length){mostrarToast("Nenhuma vistoria para exportar","#E05252");return;}
+
+  // monta CSV com BOM para Excel reconhecer UTF-8
+  const bom="\uFEFF";
+  const sep=";";
+  const cab=["Data","Hora Início","Hora Fim","Agrônomo","Área","Fazenda","Município","Cultura","Safra","Ha","Distância (km)","Duração","Vel. Média (km/h)","Pontos","GPS Usado"].join(sep);
+  const linhas=allVis.map(v=>[
+    v.data||"",
+    v.horaInicio||"",
+    v.horaFim||"",
+    v.nomeOwner||v.owner||"",
+    v.area||"",
+    v.fazenda||"",
+    v.municipio||"",
+    v.cultura||"",
+    v.safra||"",
+    v.ha||"",
+    (v.distKm||"").toString().replace(".",","),
+    v.duracaoStr||"",
+    (v.velMediaKmh||"").toString().replace(".",","),
+    v.pontos||0,
+    v.gpsUsado?"Sim":"Não"
+  ].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(sep));
+
+  const csv=bom+cab+"\n"+linhas.join("\n");
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download=`vistorias_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  mostrarToast(`✓ ${allVis.length} vistoria(s) exportadas`);
+}
+
 async function adminIrAoCampo(){await carregarAreasUsuario();showScreen("scr-areas");}
 
 // ── TUTORIAL ─────────────────────────────────────────
