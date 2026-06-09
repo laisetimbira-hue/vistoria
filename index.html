@@ -607,6 +607,36 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
       <div class="gps-pill"><span class="sdot idle" id="sdot"></span><span id="gps-txt">GPS</span></div>
       <div class="map-pill"><div class="sdot idle" id="sdot2"></div><span id="stext">Pronto para iniciar</span></div>
       <div id="geo-fence-badge" style="display:none;position:absolute;top:12px;left:12px;background:#E05252;border-radius:6px;padding:5px 11px;font-family:var(--font-mono);font-size:12px;color:#fff;align-items:center;gap:6px;z-index:10;animation:gfPulse 2s infinite;"><i class="ti ti-alert-triangle"></i> FORA DA ÁREA</div>
+      <!-- Botão NDVI com seletor -->
+      <div style="position:absolute;bottom:12px;right:12px;z-index:10;display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+        <div id="ndvi-selector" style="display:none;background:rgba(13,30,46,0.95);backdrop-filter:blur(10px);border:1px solid rgba(91,200,240,0.25);border-radius:10px;padding:10px;display:none;flex-direction:column;gap:6px;">
+          <div style="font-family:var(--font-mono);font-size:11px;color:var(--accent);margin-bottom:4px;letter-spacing:1px;">FONTE NDVI</div>
+          <button onclick="ativarNDVI('nasa')" id="btn-ndvi-nasa" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:8px 12px;font-family:var(--font-mono);font-size:12px;color:#fff;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:2px;">
+            <span style="font-weight:600;">🛰 NASA MODIS</span>
+            <span style="color:rgba(255,255,255,0.5);font-size:10px;">250m · diário · gratuito</span>
+          </button>
+          <button onclick="ativarNDVI('sentinel')" id="btn-ndvi-sentinel" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:8px 12px;font-family:var(--font-mono);font-size:12px;color:#fff;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:2px;">
+            <span style="font-weight:600;">🇪🇺 Sentinel-2</span>
+            <span style="color:rgba(255,255,255,0.5);font-size:10px;">10m · ~5 dias · demonstração</span>
+          </button>
+          <button onclick="desligarNDVI()" id="btn-ndvi-off" style="background:rgba(224,82,82,0.1);border:1px solid rgba(224,82,82,0.3);border-radius:6px;padding:6px 12px;font-family:var(--font-mono);font-size:11px;color:var(--danger);cursor:pointer;">✕ Desligar NDVI</button>
+        </div>
+        <button id="btn-ndvi" onclick="toggleNDVIMenu()" style="background:rgba(13,30,46,0.88);backdrop-filter:blur(8px);border:1px solid rgba(91,200,240,0.25);border-radius:8px;padding:7px 12px;font-family:var(--font-mono);font-size:12px;color:var(--accent);cursor:pointer;display:flex;align-items:center;gap:6px;">
+          <i class="ti ti-leaf" style="font-size:15px;"></i> NDVI
+        </button>
+      </div>
+      <!-- Legenda NDVI -->
+      <div id="ndvi-legenda" style="display:none;position:absolute;bottom:12px;left:12px;z-index:10;background:rgba(13,30,46,0.92);backdrop-filter:blur(8px);border:1px solid rgba(91,200,240,0.2);border-radius:8px;padding:10px 12px;font-family:var(--font-mono);font-size:11px;color:#fff;">
+        <div style="margin-bottom:6px;font-weight:600;color:var(--accent);">NDVI <span id="ndvi-fonte-label"></span></div>
+        <div style="display:flex;flex-direction:column;gap:3px;">
+          <div style="display:flex;align-items:center;gap:6px;"><div style="width:14px;height:14px;border-radius:2px;background:#1a4a00;flex-shrink:0;"></div>Alto vigor (&gt;0.6)</div>
+          <div style="display:flex;align-items:center;gap:6px;"><div style="width:14px;height:14px;border-radius:2px;background:#5a8c00;flex-shrink:0;"></div>Bom (0.4–0.6)</div>
+          <div style="display:flex;align-items:center;gap:6px;"><div style="width:14px;height:14px;border-radius:2px;background:#c8c800;flex-shrink:0;"></div>Moderado (0.2–0.4)</div>
+          <div style="display:flex;align-items:center;gap:6px;"><div style="width:14px;height:14px;border-radius:2px;background:#c86400;flex-shrink:0;"></div>Baixo (0–0.2)</div>
+          <div style="display:flex;align-items:center;gap:6px;"><div style="width:14px;height:14px;border-radius:2px;background:#960000;flex-shrink:0;"></div>Estresse/Solo</div>
+        </div>
+        <div style="margin-top:6px;color:rgba(255,255,255,0.4);font-size:10px;" id="ndvi-fonte-info"></div>
+      </div>
     </div>
     <div class="dt-vis-panel">
       <div class="dt-vis-hd">
@@ -1504,7 +1534,71 @@ function tutReiniciar(){
 // Zera o tutorial para todos (força reexibição)
 USERS.forEach(u=>localStorage.removeItem("tut_ok_"+u.user));
 
-// ── INDEXEDDB — OFFLINE ──────────────────────────────
+// ── NDVI ─────────────────────────────────────────────
+let ndviLayer=null, ndviAtivo=false, ndviMenuAberto=false;
+
+function toggleNDVIMenu(){
+  ndviMenuAberto=!ndviMenuAberto;
+  const sel=document.getElementById("ndvi-selector");
+  if(sel)sel.style.display=ndviMenuAberto?"flex":"none";
+}
+
+function ativarNDVI(fonte){
+  if(!lmap){mostrarToast("Inicie a vistoria primeiro","#E05252");return;}
+  // remove camada anterior
+  if(ndviLayer){lmap.removeLayer(ndviLayer);ndviLayer=null;}
+  ndviMenuAberto=false;
+  const sel=document.getElementById("ndvi-selector");if(sel)sel.style.display="none";
+  const btn=document.getElementById("btn-ndvi");
+  const legenda=document.getElementById("ndvi-legenda");
+  const label=document.getElementById("ndvi-fonte-label");
+  const info=document.getElementById("ndvi-fonte-info");
+
+  if(fonte==="nasa"){
+    // NASA GIBS — MODIS NDVI 8 dias, gratuito sem limite
+    const hoje=new Date();
+    const data=`${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,"0")}-01`;
+    ndviLayer=L.tileLayer(
+      `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_NDVI_8Day/default/${data}/GoogleMapsCompatible/{z}/{y}/{x}.png`,
+      {opacity:0.75,attribution:"NASA GIBS · MODIS Terra",maxZoom:8}
+    ).addTo(lmap);
+    if(label)label.textContent="· NASA MODIS";
+    if(info)info.textContent="250m · 8 dias · NASA Terra";
+    if(btn){btn.innerHTML='<i class="ti ti-leaf" style="font-size:15px;"></i> NDVI NASA ✓';btn.style.borderColor="var(--accent)";btn.style.background="rgba(91,200,240,0.15)";}
+    if(legenda)legenda.style.display="block";
+    mostrarToast("✓ NDVI NASA MODIS ativado");
+  } else {
+    // Sentinel-2 via Sentinel Hub demo
+    ndviLayer=L.tileLayer.wms(
+      "https://services.sentinel-hub.com/ogc/wms/cd280189-7c51-45a6-ab05-f96a76067710",
+      {layers:"NDVI",format:"image/png",transparent:true,version:"1.3.0",opacity:0.75,attribution:"Sentinel-2 · ESA"}
+    );
+    ndviLayer.on("tileerror",()=>{
+      mostrarToast("⚠ Sentinel indisponível — tente NASA","#F5A623");
+      desligarNDVI();
+    });
+    ndviLayer.addTo(lmap);
+    if(label)label.textContent="· Sentinel-2";
+    if(info)info.textContent="10m · ~5 dias · ESA";
+    if(btn){btn.innerHTML='<i class="ti ti-leaf" style="font-size:15px;"></i> NDVI S2 ✓';btn.style.borderColor="#5DC98A";btn.style.background="rgba(93,201,138,0.15)";}
+    if(legenda)legenda.style.display="block";
+    mostrarToast("✓ NDVI Sentinel-2 ativado");
+  }
+  ndviAtivo=true;
+}
+
+function desligarNDVI(){
+  if(ndviLayer&&lmap){lmap.removeLayer(ndviLayer);ndviLayer=null;}
+  ndviAtivo=false;ndviMenuAberto=false;
+  const sel=document.getElementById("ndvi-selector");if(sel)sel.style.display="none";
+  const btn=document.getElementById("btn-ndvi");
+  if(btn){btn.innerHTML='<i class="ti ti-leaf" style="font-size:15px;"></i> NDVI';btn.style.borderColor="rgba(91,200,240,0.25)";btn.style.background="rgba(13,30,46,0.88)";}
+  const legenda=document.getElementById("ndvi-legenda");if(legenda)legenda.style.display="none";
+  mostrarToast("NDVI desativado");
+}
+
+function toggleNDVI(){toggleNDVIMenu();}
+
 const IDB_NAME="agrobase_v1";let idb=null;
 function abrirIDB(){return new Promise((res,rej)=>{const r=indexedDB.open(IDB_NAME,1);r.onupgradeneeded=e=>{const d=e.target.result;["areas","vistorias","kmls","logs","sync_queue"].forEach(s=>{if(!d.objectStoreNames.contains(s))d.createObjectStore(s,{keyPath:s==="sync_queue"?"qid":"id",autoIncrement:s==="sync_queue"});});};r.onsuccess=e=>{idb=e.target.result;res(idb);};r.onerror=e=>rej(e);});}
 function idbPut(s,o){return new Promise((res,rej)=>{const t=idb.transaction(s,"readwrite");t.objectStore(s).put(o).onsuccess=()=>res();t.onerror=e=>rej(e);});}
