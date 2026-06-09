@@ -41,11 +41,11 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
    ═══════════════════════════════════════ */
 @media(min-width:1024px){
   :root{--sidebar:240px;--topbar:52px;}
-  body{overflow-x:hidden;overflow-y:auto;}
-  #app{overflow-y:auto;}
-  .screen.active{overflow-y:auto;}
+  body{overflow-x:hidden;overflow-y:hidden;}
+  #app{overflow-y:auto;height:calc(100vh - var(--topbar));position:relative;top:0;}
   #app{max-width:100%;margin:0;display:block;}
-  .screen{min-height:calc(100vh - var(--topbar));width:100%;max-width:100%;}
+  .screen{min-height:0 !important;width:100%;max-width:100%;}
+  .screen.active{overflow-y:auto;min-height:calc(100vh - var(--topbar));}
   .dt-topbar{width:100%;}
 
   /* ── TOPBAR ── */
@@ -150,15 +150,17 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 
   /* ── GEO ── */
   #scr-geo .hdr{display:none;}
-  #scr-geo{height:calc(100vh - var(--topbar));overflow-y:auto;display:flex;flex-direction:column;}
-  #scr-geo:not(.active){display:none !important;}
-  #scr-geo .scroll{flex:1;overflow-y:auto;height:auto;}
-  #geo-map{height:400px !important;flex-shrink:0;}
-  #scr-geo .card{margin:0 12px 12px;}
-  #scr-geo .btn-row{margin:0 12px 16px;}
+  .screen.active#scr-geo{display:block !important;overflow-y:auto;height:calc(100vh - var(--topbar));padding:24px;}
+  #scr-geo .scroll{display:grid;grid-template-columns:400px 1fr;gap:20px;align-items:start;}
+  #geo-col-left{display:flex;flex-direction:column;gap:12px;}
+  #geo-col-right{position:sticky;top:0;}
+  #geo-map{height:calc(100vh - 160px) !important;min-height:400px;border-radius:8px;}
+  #geo-map-empty{border-radius:8px;}
 
   /* ── NOVA ÁREA ── */
   #scr-nova-area .hdr{display:none;}
+  .screen.active#scr-nova-area{display:block !important;overflow-y:auto;height:calc(100vh - var(--topbar));}
+  #scr-nova-area .scroll{max-width:720px;margin:0 auto;padding:24px;}
   .dt-form-layout{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:24px;max-width:1100px;margin:0 auto;}
   .dt-form-col{display:flex;flex-direction:column;gap:14px;}
   .dt-form-full{grid-column:1/3;}
@@ -480,35 +482,39 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
     <div style="width:70px;"></div>
   </div>
   <div class="scroll">
-    <div style="position:relative;">
-      <div id="geo-map" style="width:100%;height:260px;z-index:1;background:var(--surface2);"></div>
-      <div id="geo-map-empty" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;pointer-events:none;"><i class="ti ti-map-2" style="font-size:36px;color:var(--border);"></i><span style="font-family:var(--font-mono);font-size:13px;color:var(--text3);">Faça upload do KML/KMZ</span></div>
-    </div>
-    <div id="geo-info" style="display:none;" class="card">
-      <div class="card-hd"><div class="card-hd-t"><i class="ti ti-polygon"></i> POLÍGONO DETECTADO</div></div>
-      <div class="card-bd">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;text-align:center;"><div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);">ÁREA CALC.</div><div style="font-family:var(--font-head);font-size:28px;font-weight:800;color:var(--accent);" id="geo-ha">—</div><div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);">hectares</div></div>
-          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;text-align:center;"><div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);">VÉRTICES</div><div style="font-family:var(--font-head);font-size:28px;font-weight:800;color:var(--accent);" id="geo-pts">—</div><div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);">pontos</div></div>
+    <!-- coluna esquerda: formulário -->
+    <div id="geo-col-left">
+      <div id="geo-info" style="display:none;" class="card">
+        <div class="card-hd"><div class="card-hd-t"><i class="ti ti-polygon"></i> POLÍGONO DETECTADO</div></div>
+        <div class="card-bd">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;text-align:center;"><div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);">ÁREA CALC.</div><div style="font-family:var(--font-head);font-size:28px;font-weight:800;color:var(--accent);" id="geo-ha">—</div><div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);">hectares</div></div>
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;text-align:center;"><div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);">VÉRTICES</div><div style="font-family:var(--font-head);font-size:28px;font-weight:800;color:var(--accent);" id="geo-pts">—</div><div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);">pontos</div></div>
+          </div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;"><div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);margin-bottom:4px;">NOME NO ARQUIVO</div><div style="font-family:var(--font-head);font-size:16px;font-weight:700;" id="geo-nome-kml">—</div></div>
         </div>
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;"><div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);margin-bottom:4px;">NOME NO ARQUIVO</div><div style="font-family:var(--font-head);font-size:16px;font-weight:700;" id="geo-nome-kml">—</div></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-hd-t"><i class="ti ti-upload"></i> UPLOAD DO TALHÃO</div></div>
+        <div class="card-bd">
+          <div id="geo-drop" onclick="document.getElementById('geo-file').click()" style="border:2px dashed var(--border);border-radius:var(--radius);padding:28px 16px;text-align:center;cursor:pointer;">
+            <i class="ti ti-file-type-xml" style="font-size:36px;color:var(--accent);display:block;margin-bottom:8px;"></i>
+            <div style="font-family:var(--font-head);font-size:18px;font-weight:700;">Selecionar arquivos</div>
+            <div style="font-family:var(--font-mono);font-size:12px;color:var(--text3);margin-top:4px;">KML ou KMZ · selecione um ou vários</div>
+          </div>
+          <input type="file" id="geo-file" accept=".kml,.kmz" style="display:none;" multiple onchange="lerKMLMultiplo(event)"/>
+          <div id="geo-status" style="font-family:var(--font-mono);font-size:13px;color:var(--text3);text-align:center;margin-top:10px;min-height:18px;"></div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="showScreen('scr-areas')" style="flex:1;">CANCELAR</button>
+        <button class="btn btn-primary" id="geo-next" onclick="irParaCadastro()" style="flex:2;" disabled><i class="ti ti-arrow-right"></i> CONTINUAR</button>
       </div>
     </div>
-    <div class="card">
-      <div class="card-hd"><div class="card-hd-t"><i class="ti ti-upload"></i> UPLOAD DO TALHÃO</div></div>
-      <div class="card-bd">
-        <div id="geo-drop" onclick="document.getElementById('geo-file').click()" style="border:2px dashed var(--border);border-radius:var(--radius);padding:28px 16px;text-align:center;cursor:pointer;">
-          <i class="ti ti-file-type-xml" style="font-size:36px;color:var(--accent);display:block;margin-bottom:8px;"></i>
-          <div style="font-family:var(--font-head);font-size:18px;font-weight:700;">Selecionar arquivos</div>
-          <div style="font-family:var(--font-mono);font-size:12px;color:var(--text3);margin-top:4px;">KML ou KMZ · selecione um ou vários</div>
-        </div>
-        <input type="file" id="geo-file" accept=".kml,.kmz" style="display:none;" multiple onchange="lerKMLMultiplo(event)"/>
-        <div id="geo-status" style="font-family:var(--font-mono);font-size:13px;color:var(--text3);text-align:center;margin-top:10px;min-height:18px;"></div>
-      </div>
-    </div>
-    <div class="btn-row">
-      <button class="btn btn-ghost" onclick="showScreen('scr-areas')" style="flex:1;">CANCELAR</button>
-      <button class="btn btn-primary" id="geo-next" onclick="irParaCadastro()" style="flex:2;" disabled><i class="ti ti-arrow-right"></i> CONTINUAR</button>
+    <!-- coluna direita: mapa -->
+    <div id="geo-col-right" style="position:relative;">
+      <div id="geo-map" style="width:100%;height:260px;z-index:1;background:var(--surface2);border-radius:8px;"></div>
+      <div id="geo-map-empty" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;pointer-events:none;border-radius:8px;"><i class="ti ti-map-2" style="font-size:36px;color:var(--border);"></i><span style="font-family:var(--font-mono);font-size:13px;color:var(--text3);">Faça upload do KML/KMZ</span></div>
     </div>
   </div>
 </div>
@@ -555,8 +561,13 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
         <div class="field"><label>Município</label><input id="f-municipio" placeholder="Ex: Vacaria — RS"/></div>
         <div class="field" id="f-responsavel-wrap" style="display:none;">
           <label>Responsável pela vistoria</label>
-          <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px;" id="f-responsavel-checks"></div>
-          <div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);margin-top:4px;">Selecione um ou mais — cada um faz sua própria vistoria</div>
+          <div style="position:relative;" id="resp-dropdown-wrap">
+            <div id="resp-display" onclick="toggleRespDropdown()" style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-family:var(--font-mono);font-size:14px;color:var(--text);">
+              <span id="resp-display-txt">Selecione...</span>
+              <i class="ti ti-chevron-down" id="resp-chevron" style="font-size:16px;color:var(--text3);transition:.2s;"></i>
+            </div>
+            <div id="resp-options" style="display:none;position:fixed;z-index:9999;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-top:4px;box-shadow:0 8px 24px rgba(0,0,0,.6);overflow:hidden;min-width:280px;"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -1093,9 +1104,8 @@ function renderAreas(){updateSplash();const list=document.getElementById("areas-
 function g(id){const e=document.getElementById(id);return e?e.value.trim():"";}
 async function salvarArea(){
   const nome=g("f-nome");if(!nome){alert("Informe o nome da área.");return;}
-  // coleta responsáveis selecionados via checkboxes
-  const checkboxes=document.querySelectorAll("#f-responsavel-checks input[type=checkbox]:checked");
-  const responsaveis=[...checkboxes].map(c=>c.value);
+  const sel=document.getElementById("f-responsavel");
+  const responsaveis=currentUser?.role==="admin"?[...respSelecionados]:[];
   // base da área
   const base={nome,fazenda:g("f-fazenda"),municipio:g("f-municipio"),safra:g("f-safra"),cultura:g("f-cultura"),cultivar:g("f-cultivar"),ha:g("f-ha")||geoPoligono?.haCalc||"",estadio:g("f-estadio"),pop:g("f-pop"),semeadura:g("f-semeadura"),objetivos:getChips(),obs:g("f-obs"),data:new Date().toLocaleDateString("pt-BR"),poligono:geoPoligono?geoPoligono.coords:null};
 
@@ -1120,7 +1130,8 @@ async function salvarArea(){
   document.getElementById("f-cultura").value="";
   document.getElementById("f-estadio").value="";
   document.querySelectorAll("#obj-chips .chip.sel").forEach(c=>c.classList.remove("sel"));
-  document.querySelectorAll("#f-responsavel-checks input").forEach(c=>c.checked=false);
+  respSelecionados=[];
+  const disp=document.getElementById("resp-display-txt");if(disp)disp.textContent="Selecione...";
   geoPoligono=null;
 
   if(currentUser?.role==="admin" && responsaveis.length>0){
@@ -1368,6 +1379,11 @@ async function baixarKMLFirestore(visId){
 async function showScreen(id){
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   document.getElementById(id)?.classList.add("active");
+  window.scrollTo(0,0);
+  document.getElementById(id)?.scrollTo(0,0);
+  // oculta layout desktop de áreas ao sair
+  const dtAreas=document.getElementById("dt-areas-layout");
+  if(dtAreas)dtAreas.style.display=id==="scr-areas"?"grid":"none";
   if(id==="scr-areas"){
     renderAreas();
     if(window.innerWidth>=1024){
@@ -1380,7 +1396,14 @@ async function showScreen(id){
   }
   if(id==="scr-vistoria")setTimeout(()=>lmap?.invalidateSize(),120);
   if(id==="scr-report"){buildReport();const rd=document.getElementById("rep-date");if(rd)rd.textContent=new Date().toLocaleDateString("pt-BR");}
-  if(id==="scr-geo")setTimeout(()=>{initGeoMap();geoLeafletMap?.invalidateSize();},120);
+  if(id==="scr-geo")setTimeout(()=>{
+    initGeoMap();
+    if(geoLeafletMap){
+      geoLeafletMap.invalidateSize();
+      const mapEl=document.getElementById("geo-map");
+      if(mapEl)mapEl.style.display="block";
+    }
+  },150);
   if(id==="scr-admin")await renderAdmin();
   // ── DESKTOP ──
   if(window.innerWidth>=1024){
@@ -1564,7 +1587,68 @@ function tutReiniciar(){
 // Zera o tutorial para todos (força reexibição)
 USERS.forEach(u=>localStorage.removeItem("tut_ok_"+u.user));
 
-// ── NDVI ─────────────────────────────────────────────
+// ── DROPDOWN RESPONSÁVEIS ────────────────────────────
+let respSelecionados=[];
+
+function toggleRespDropdown(){
+  const opts=document.getElementById("resp-options");
+  const disp=document.getElementById("resp-display");
+  const chev=document.getElementById("resp-chevron");
+  const aberto=opts.style.display==="block";
+  if(!aberto){
+    const rect=disp.getBoundingClientRect();
+    opts.style.top=(rect.bottom+4)+"px";
+    opts.style.left=rect.left+"px";
+    opts.style.width=rect.width+"px";
+  }
+  opts.style.display=aberto?"none":"block";
+  if(chev)chev.style.transform=aberto?"rotate(0deg)":"rotate(180deg)";
+}
+
+function buildRespDropdown(){
+  const opts=document.getElementById("resp-options");
+  if(!opts)return;
+  opts.innerHTML=USERS.map(u=>`
+    <div onclick="toggleRespUser('${u.user}')" id="resp-opt-${u.user}"
+      style="padding:11px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;font-family:var(--font-mono);font-size:14px;border-bottom:1px solid var(--border);">
+      <div id="resp-check-${u.user}" style="width:18px;height:18px;border-radius:4px;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;"></div>
+      <span>${u.nome}${u.role==="admin"?" (você)":""}</span>
+    </div>`).join("");
+}
+
+function toggleRespUser(user){
+  const idx=respSelecionados.indexOf(user);
+  if(idx>=0) respSelecionados.splice(idx,1);
+  else respSelecionados.push(user);
+  // atualiza visual
+  USERS.forEach(u=>{
+    const check=document.getElementById(`resp-check-${u.user}`);
+    const opt=document.getElementById(`resp-opt-${u.user}`);
+    if(check){
+      const sel=respSelecionados.includes(u.user);
+      check.style.background=sel?"var(--accent)":"transparent";
+      check.style.borderColor=sel?"var(--accent)":"var(--border)";
+      check.innerHTML=sel?`<i class="ti ti-check" style="font-size:12px;color:#071826;"></i>`:"";
+      if(opt)opt.style.background=sel?"rgba(91,200,240,0.06)":"transparent";
+    }
+  });
+  // atualiza display
+  const disp=document.getElementById("resp-display-txt");
+  if(disp)disp.textContent=respSelecionados.length
+    ?USERS.filter(u=>respSelecionados.includes(u.user)).map(u=>u.nome).join(", ")
+    :"Selecione...";
+}
+
+// fecha ao clicar fora
+document.addEventListener("click",e=>{
+  const wrap=document.getElementById("resp-dropdown-wrap");
+  if(wrap&&!wrap.contains(e.target)){
+    const opts=document.getElementById("resp-options");
+    const chev=document.getElementById("resp-chevron");
+    if(opts)opts.style.display="none";
+    if(chev)chev.style.transform="rotate(0deg)";
+  }
+});
 let ndviLayer=null, ndviAtivo=false, ndviMenuAberto=false;
 
 function toggleNDVIMenu(){
@@ -1974,16 +2058,12 @@ function irParaCadastro(){
   if(geoPoligono.haCalc)document.getElementById("f-ha").value=geoPoligono.haCalc;
   if(geoPoligono.nome)document.getElementById("f-nome").value=geoPoligono.nome;
   const wrap=document.getElementById("f-responsavel-wrap");
-  const checks=document.getElementById("f-responsavel-checks");
-  if(currentUser?.role==="admin"&&wrap&&checks){
+  if(currentUser?.role==="admin"&&wrap){
     wrap.style.display="block";
-    // inclui todos os usuários incluindo o próprio admin
-    const todos=USERS;
-    checks.innerHTML=todos.map(u=>`
-      <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;">
-        <input type="checkbox" value="${u.user}" style="width:16px;height:16px;accent-color:var(--accent);">
-        <span style="font-family:var(--font-mono);font-size:14px;">${u.nome}${u.role==="admin"?" (você)":""}</span>
-      </label>`).join("");
+    respSelecionados=[];
+    buildRespDropdown();
+    const disp=document.getElementById("resp-display-txt");
+    if(disp)disp.textContent="Selecione...";
   }
   showScreen("scr-nova-area");
 }
