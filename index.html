@@ -151,6 +151,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
   /* ── GEO ── */
   #scr-geo .hdr{display:none;}
   #scr-geo{height:calc(100vh - var(--topbar));overflow-y:auto;display:flex;flex-direction:column;}
+  #scr-geo:not(.active){display:none !important;}
   #scr-geo .scroll{flex:1;overflow-y:auto;height:auto;}
   #geo-map{height:400px !important;flex-shrink:0;}
   #scr-geo .card{margin:0 12px 12px;}
@@ -179,6 +180,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
   .screen{display:none !important;}
   .screen.active{display:flex !important;}
   .screen.active#scr-login{display:flex !important;align-items:center;justify-content:center;}
+  .screen.active#scr-areas{display:block !important;padding:0;min-height:calc(100vh - var(--topbar));}
+  .screen.active#scr-geo{display:flex !important;flex-direction:column;height:calc(100vh - var(--topbar));overflow-y:auto;}
+  .screen.active#scr-admin{display:block !important;overflow-y:auto;height:calc(100vh - var(--topbar));}
 }
 
 /* HEADER */
@@ -551,9 +555,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
         <div class="field"><label>Município</label><input id="f-municipio" placeholder="Ex: Vacaria — RS"/></div>
         <div class="field" id="f-responsavel-wrap" style="display:none;">
           <label>Responsável pela vistoria</label>
-          <select id="f-responsavel">
-            <option value="">— Selecione o agrônomo —</option>
-          </select>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px;" id="f-responsavel-checks"></div>
+          <div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);margin-top:4px;">Selecione um ou mais — cada um faz sua própria vistoria</div>
         </div>
       </div>
     </div>
@@ -846,7 +849,7 @@ let currentUser=null; // {user, role:'admin'|'agronomo', nome}
 // ── USUÁRIOS ─────────────────────────────────────────
 // Cadastro local de usuários (admin gerencia)
 const USERS=[
-  {user:"admin",   pass:"1234",  role:"admin",    nome:"Administrador"},
+  {user:"admin",   pass:"1234",  role:"admin",    nome:"Laise"},
   {user:"ruan",    pass:"scv",   role:"agronomo", nome:"Ruan"},
   {user:"joelmar", pass:"scv26", role:"agronomo", nome:"Joelmar"},
 ];
@@ -1090,31 +1093,41 @@ function renderAreas(){updateSplash();const list=document.getElementById("areas-
 function g(id){const e=document.getElementById(id);return e?e.value.trim():"";}
 async function salvarArea(){
   const nome=g("f-nome");if(!nome){alert("Informe o nome da área.");return;}
-  // owner: se admin atribuiu responsável, usa esse; senão usa o próprio usuário
-  const responsavel=document.getElementById("f-responsavel")?.value;
-  const ownerUser = (currentUser?.role==="admin" && responsavel) ? responsavel : currentUser?.user;
-  const ownerNome = USERS.find(u=>u.user===ownerUser)?.nome || ownerUser;
-  const a={nome,fazenda:g("f-fazenda"),municipio:g("f-municipio"),safra:g("f-safra"),cultura:g("f-cultura"),cultivar:g("f-cultivar"),ha:g("f-ha")||geoPoligono?.haCalc||"",estadio:g("f-estadio"),pop:g("f-pop"),semeadura:g("f-semeadura"),objetivos:getChips(),obs:g("f-obs"),data:new Date().toLocaleDateString("pt-BR"),id:Date.now(),poligono:geoPoligono?geoPoligono.coords:null,owner:ownerUser,ownerNome};
-  // se admin atribuiu para outro, salva no Firebase mas não adiciona na lista local
-  if(currentUser?.role==="admin" && responsavel && responsavel!==currentUser.user){
+  // coleta responsáveis selecionados via checkboxes
+  const checkboxes=document.querySelectorAll("#f-responsavel-checks input[type=checkbox]:checked");
+  const responsaveis=[...checkboxes].map(c=>c.value);
+  // base da área
+  const base={nome,fazenda:g("f-fazenda"),municipio:g("f-municipio"),safra:g("f-safra"),cultura:g("f-cultura"),cultivar:g("f-cultivar"),ha:g("f-ha")||geoPoligono?.haCalc||"",estadio:g("f-estadio"),pop:g("f-pop"),semeadura:g("f-semeadura"),objetivos:getChips(),obs:g("f-obs"),data:new Date().toLocaleDateString("pt-BR"),poligono:geoPoligono?geoPoligono.coords:null};
+
+  if(currentUser?.role==="admin" && responsaveis.length>0){
+    // cria uma cópia independente para cada agrônomo
+    for(const ownerUser of responsaveis){
+      const ownerNome=USERS.find(u=>u.user===ownerUser)?.nome||ownerUser;
+      const a={...base,id:Date.now()+Math.floor(Math.random()*9999),owner:ownerUser,ownerNome};
+      try{await dbSalvarArea(a);}catch(e){console.warn("Firebase offline");}
+    }
+    mostrarToast(`✓ Área atribuída para ${responsaveis.length} agrônomo(s)`);
+  } else {
+    // salva para si mesmo
+    const a={...base,id:Date.now(),owner:currentUser?.user,ownerNome:currentUser?.nome};
+    areas.push(a);salvarAreasLocal();
     try{await dbSalvarArea(a);}catch(e){console.warn("Firebase offline");}
-    mostrarToast(`✓ Área "${nome}" atribuída a ${ownerNome}`);
-    // limpa formulário
-    ["f-nome","f-fazenda","f-municipio","f-cultivar","f-ha","f-pop","f-semeadura","f-obs"].forEach(id=>document.getElementById(id).value="");
-    document.getElementById("f-cultura").value="";document.getElementById("f-estadio").value="";
-    document.querySelectorAll("#obj-chips .chip.sel").forEach(c=>c.classList.remove("sel"));
-    const sel=document.getElementById("f-responsavel");if(sel)sel.value="";
-    geoPoligono=null;
-    showScreen("scr-areas");
-    return;
+    currentArea=a;resetVistoria();
   }
-  // caso normal: salva para si mesmo
-  areas.push(a);salvarAreasLocal();
-  try{await dbSalvarArea(a);}catch(e){console.warn("Firebase offline");}
+
+  // limpa formulário
   ["f-nome","f-fazenda","f-municipio","f-cultivar","f-ha","f-pop","f-semeadura","f-obs"].forEach(id=>document.getElementById(id).value="");
-  document.getElementById("f-cultura").value="";document.getElementById("f-estadio").value="";
+  document.getElementById("f-cultura").value="";
+  document.getElementById("f-estadio").value="";
   document.querySelectorAll("#obj-chips .chip.sel").forEach(c=>c.classList.remove("sel"));
-  geoPoligono=null;currentArea=a;resetVistoria();showScreen("scr-vistoria");
+  document.querySelectorAll("#f-responsavel-checks input").forEach(c=>c.checked=false);
+  geoPoligono=null;
+
+  if(currentUser?.role==="admin" && responsaveis.length>0){
+    showScreen("scr-areas");
+  } else {
+    showScreen("scr-vistoria");
+  }
 }
 function abrirVistoria(i){currentArea=areas[i];resetVistoria();showScreen("scr-vistoria");}
 function resetVistoria(){
@@ -1472,7 +1485,10 @@ async function exportarExcel(){
   mostrarToast(`✓ ${allVis.length} vistoria(s) exportadas`);
 }
 
-async function adminIrAoCampo(){await carregarAreasUsuario();showScreen("scr-areas");}
+async function adminIrAoCampo(){
+  await carregarAreasUsuario();
+  showScreen("scr-areas");
+}
 
 // ── TUTORIAL ─────────────────────────────────────────
 const TSTEPS=[
@@ -1957,14 +1973,17 @@ function irParaCadastro(){
   if(!geoPoligono)return;
   if(geoPoligono.haCalc)document.getElementById("f-ha").value=geoPoligono.haCalc;
   if(geoPoligono.nome)document.getElementById("f-nome").value=geoPoligono.nome;
-  // campo responsável: só aparece para admin
   const wrap=document.getElementById("f-responsavel-wrap");
-  const sel=document.getElementById("f-responsavel");
-  if(currentUser?.role==="admin"&&wrap&&sel){
+  const checks=document.getElementById("f-responsavel-checks");
+  if(currentUser?.role==="admin"&&wrap&&checks){
     wrap.style.display="block";
-    const agros=USERS.filter(u=>u.role==="agronomo");
-    sel.innerHTML=`<option value="">— Selecione o agrônomo —</option>`+
-      agros.map(u=>`<option value="${u.user}">${u.nome}</option>`).join("");
+    // inclui todos os usuários incluindo o próprio admin
+    const todos=USERS;
+    checks.innerHTML=todos.map(u=>`
+      <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;">
+        <input type="checkbox" value="${u.user}" style="width:16px;height:16px;accent-color:var(--accent);">
+        <span style="font-family:var(--font-mono);font-size:14px;">${u.nome}${u.role==="admin"?" (você)":""}</span>
+      </label>`).join("");
   }
   showScreen("scr-nova-area");
 }
