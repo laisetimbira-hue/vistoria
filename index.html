@@ -1075,9 +1075,16 @@ function initMap(){
   if(lmap)return;
   const el=document.getElementById("leaflet-map");
   if(!el||typeof L==="undefined")return;
+  // garante que o elemento tem dimensão antes de inicializar
+  el.style.width="100%";
+  el.style.height="100%";
   lmap=L.map(el,{center:DEFAULT_CENTER,zoom:14,zoomControl:true,attributionControl:false});
   addSatTiles(lmap);
   lPolyline=L.polyline([],{color:"#5BC8F0",weight:4,opacity:0.9}).addTo(lmap);
+  // força resize múltiplas vezes para garantir renderização
+  setTimeout(()=>lmap?.invalidateSize(),100);
+  setTimeout(()=>lmap?.invalidateSize(),500);
+  setTimeout(()=>lmap?.invalidateSize(),1000);
 }
 
 function mapAddPoint(lat,lng){
@@ -1249,7 +1256,11 @@ function resetVistoria(){
   const lb=document.getElementById("track-lbl");if(lb)lb.textContent="Iniciar";
   const bp=document.getElementById("btn-ponto");if(bp)bp.disabled=true;
   renderPontos();
-  setTimeout(()=>{lmap=null;initMap();if(lmap){mapClear();setTimeout(()=>lmap.invalidateSize(),80);}},80);
+  // reinicia o mapa sem destruir — só limpa o conteúdo
+  setTimeout(()=>{
+    if(lmap){mapClear();setTimeout(()=>lmap.invalidateSize(),150);}
+    else{initMap();setTimeout(()=>{if(lmap)mapClear();},200);}
+  },100);
 }
 function ptColor(t){return{observacao:"#0A84FF",cultivar:"#00C96B",praga:"#FF6B35",doenca:"#FF9F0A",invasora:"#30D158",solo:"#8E8E93",agua:"#5AC8FA",stand:"#64D2FF",producao:"#BF5AF2",adubacao:"#FFD60A",outro:"#636366"}[t]||"#636366";}
 function pad(n){return n.toString().padStart(2,"0");}
@@ -1281,9 +1292,15 @@ function startTracking(){
   if(!navigator.geolocation){set("stext","GPS não disponível");return;}
   watchId=navigator.geolocation.watchPosition(pos=>{
     const lat=pos.coords.latitude,lng=pos.coords.longitude,acc=pos.coords.accuracy||999;
-    if(acc>30&&gpsPath.length>0){set("gps-txt","±"+Math.round(acc)+"m ⚠");return;}
+    // ignora leituras com precisão pior que 25m
+    if(acc>25&&gpsPath.length>0){set("gps-txt","±"+Math.round(acc)+"m ⚠");return;}
     useGPS=true;set("gps-txt","±"+Math.round(acc)+"m");
-    if(lastGPSPos){const d=geoD(lastGPSPos.lat,lastGPSPos.lng,lat,lng);if(d<100){totalDist+=d/1000;set("sv-dist",totalDist.toFixed(3));}}
+    if(lastGPSPos){
+      const d=geoD(lastGPSPos.lat,lastGPSPos.lng,lat,lng);
+      // ignora saltos maiores que 30m entre leituras consecutivas (GPS jump)
+      if(d>0&&d<=30){totalDist+=d/1000;set("sv-dist",totalDist.toFixed(3));}
+      else if(d>30){set("gps-txt","⚠ sinal instável");return;} // ignora o ponto
+    }
     lastGPSPos={lat,lng,acc,alt:pos.coords.altitude||null,ts:Date.now()};
     gpsPath.push({lat,lng,acc,alt:pos.coords.altitude||null,ts:Date.now()});
     set("sv-pts",gpsPath.length);
